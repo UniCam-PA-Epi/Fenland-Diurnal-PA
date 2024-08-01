@@ -10,6 +10,9 @@ replace bodyfat=. if bodyfat==-1 //n=9 missing
 rename FM fatMass
 rename FFM fatFreeMass
 
+gen log_fatMass = ln(fatMass)
+gen log_fatFreeMass = ln(fatFreeMass)
+
 
 //Insulin & log_Insulin
 rename G_Insulin insulin
@@ -66,6 +69,7 @@ sum mbpsys if mbpsys >=140 // ~1500 could be classified as having hypertension
 // new glucose //
 
 gen glucose0 = cond(RepeatGlucose0<=Glucose0,RepeatGlucose0,Glucose0)
+gen log_glucose0 = ln(glucose0)
 
 /*
 //Glucose: convert to binary variable with levels ≥ 5.6 mmol/L defined 
