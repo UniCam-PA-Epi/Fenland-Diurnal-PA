@@ -6,26 +6,26 @@ set seed 1234
 
 args filePath
 
-
-********************************************************************************
-** Descriptives Tables (Table 1)
-********************************************************************************
-
 use "`filePath'"
 
 qui do Code/Sub/initialiseCovariates.do
 qui do Code/Sub/initialiseOutcomes.do
 qui do Code/Sub/initialisePAEE.do
 
+
+********************************************************************************
+** Descriptives Tables (Table 1)
+********************************************************************************
+
 // Define continuous and categorical variables
 
 #delimit ;
 local contVars  age
-                smoking
                 diet
                 alcohol
                 paeeTt
-                bodyfat
+                fatMass
+                fatFreeMass
                 insulin
                 leptin
                 nefa
@@ -34,28 +34,29 @@ local contVars  age
                 crp
                 mbpdia
                 mbpsys
+                glucose0
                 ;
 
 local catVars   ethnic
                 education
                 income
+                smoke
                 work_s
                 marital_s
                 season
                 cardiometabol_med
                 testsite
-                glucose_cat
                 ;
 
 #delimit cr
 
-
+capture erase "Results/1_descriptiveTables.xlsx"
 
 levelsof sex, local(sexLevels)
 foreach curSex of local sexLevels{
     
     local curSexLabel : label (sex) `curSex'
-    putexcel set "Results/1_descriptiveTables", sheet("`curSexLabel'") modify
+    putexcel set "Results/1_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
 
     preserve
     keep if sex == `curSex'
@@ -74,15 +75,18 @@ foreach curSex of local sexLevels{
 
     foreach curVar of local contVars{
 
-        su `curVar'
+        su `curVar', detail
 
-		local curMeanSD = 	`"`=trim("`: display %10.1f r(mean)'")'"' 	+   ///
-							`" `=ustrunescape("\u00B1")' "' 			+   ///
-							`"`=trim("`: display %10.1f r(sd)'")'"'		
+        local curMedIQR =   `"`=trim("`: display %10.1f r(p50)'")'"'    +   ///
+                            " ("                                        +   ///
+                            `"`=trim("`: display %10.1f r(p25)'")'"'    +   ///
+                            "-"                                         +   ///
+                            `"`=trim("`: display %10.1f r(p75)'")'"'    +   ///
+                            ")"
 
         local curRow = `curRow' + 1
         putexcel A`curRow' = ("`curVar'")
-        putexcel B`curRow' = ("`curMeanSD'")
+        putexcel B`curRow' = ("`curMedIQR'")
 
     }
 
