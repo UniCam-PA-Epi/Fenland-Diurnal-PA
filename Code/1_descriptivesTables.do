@@ -21,7 +21,6 @@ qui do Code/Sub/initialisePAEE.do
 
 #delimit ;
 local contVars  age
-                smoking
                 diet
                 alcohol
                 paeeTt
@@ -41,6 +40,7 @@ local contVars  age
 local catVars   ethnic
                 education
                 income
+                smoke
                 work_s
                 marital_s
                 season
@@ -75,15 +75,18 @@ foreach curSex of local sexLevels{
 
     foreach curVar of local contVars{
 
-        su `curVar'
+        su `curVar', detail
 
-		local curMeanSD = 	`"`=trim("`: display %10.1f r(mean)'")'"' 	+   ///
-							`" `=ustrunescape("\u00B1")' "' 			+   ///
-							`"`=trim("`: display %10.1f r(sd)'")'"'		
+        local curMedIQR =   `"`=trim("`: display %10.1f r(p50)'")'"'    +   ///
+                            " ("                                        +   ///
+                            `"`=trim("`: display %10.1f r(p25)'")'"'    +   ///
+                            "-"                                         +   ///
+                            `"`=trim("`: display %10.1f r(p75)'")'"'    +   ///
+                            ")"
 
         local curRow = `curRow' + 1
         putexcel A`curRow' = ("`curVar'")
-        putexcel B`curRow' = ("`curMeanSD'")
+        putexcel B`curRow' = ("`curMedIQR'")
 
     }
 

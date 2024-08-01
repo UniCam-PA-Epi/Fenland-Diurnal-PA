@@ -79,8 +79,36 @@ label values work_status worklab
 // n=637 missing (labelled as unknown)
 
 //Smoking
+
+// Changed to categorical var
+
+replace SMOKE = 3 if SMOKE == 9 | SMOKE == .
+
+tab SMOKE
+
+#delimit ;
+
+label 	define smoke_labels 
+        0 "Never smoked"
+        1 "Ex smoker"
+        2 "Current smoker"
+        3 "Missing/Unknown"
+        ,
+        replace
+        ;
+                
+#delimit cr
+
+label values SMOKE smoke_labels
+
+rename SMOKE smoke
+
+/*
 gen smoking = gq_sm_pckyrs_DER
 replace smoking=. if smoking==-8 | smoking==-7 | smoking==. //n=877 missing
+*/
+
+
 
 //DASH
 gen diet = DASH_AccordanceScore //n=7 missing
