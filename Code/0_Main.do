@@ -8,4 +8,4 @@ args filePath
 
 //do Code/1_descriptivesTables.do "`filePath'"
 //do Code/2_jointAssociations.do  "`filePath'"
-do Code/3_boxPlot.do "`filePath'"
+do Code/3_violinPlot.do "`filePath'"
