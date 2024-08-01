@@ -6,16 +6,16 @@ set seed 1234
 
 args filePath
 
-
-********************************************************************************
-** Descriptives Tables (Table 1)
-********************************************************************************
-
 use "`filePath'"
 
 qui do Code/Sub/initialiseCovariates.do
 qui do Code/Sub/initialiseOutcomes.do
 qui do Code/Sub/initialisePAEE.do
+
+
+********************************************************************************
+** Descriptives Tables (Table 1)
+********************************************************************************
 
 // Define continuous and categorical variables
 
@@ -25,7 +25,8 @@ local contVars  age
                 diet
                 alcohol
                 paeeTt
-                bodyfat
+                fatMass
+                fatFreeMass
                 insulin
                 leptin
                 nefa
@@ -34,6 +35,7 @@ local contVars  age
                 crp
                 mbpdia
                 mbpsys
+                glucose0
                 ;
 
 local catVars   ethnic
@@ -44,18 +46,17 @@ local catVars   ethnic
                 season
                 cardiometabol_med
                 testsite
-                glucose_cat
                 ;
 
 #delimit cr
 
-
+capture erase "Results/1_descriptiveTables.xlsx"
 
 levelsof sex, local(sexLevels)
 foreach curSex of local sexLevels{
     
     local curSexLabel : label (sex) `curSex'
-    putexcel set "Results/1_descriptiveTables", sheet("`curSexLabel'") modify
+    putexcel set "Results/1_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
 
     preserve
     keep if sex == `curSex'
