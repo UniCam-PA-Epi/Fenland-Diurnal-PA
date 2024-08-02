@@ -116,7 +116,7 @@ foreach curOutcomeVar of local outcomeVars{
 
             putexcel `curCol'`curRow' = ("`curCoefCI'`curSig'")
 
-        }          
+        }      
     }
 }
 
