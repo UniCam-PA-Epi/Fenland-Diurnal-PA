@@ -49,8 +49,7 @@ local catCovVars    i.ethnic
 #delimit cr
 
 local modelLevel1 `contCovVars' `catCovVars'
-local modelLevel2 `contCovVars' `catCovVars' fatMass
-
+local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 
 capture erase "Results/2_jointAssociations.xlsx"
 local curRow = 1

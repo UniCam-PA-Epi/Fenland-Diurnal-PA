@@ -10,6 +10,9 @@ replace bodyfat=. if bodyfat==-1 //n=9 missing
 rename FM fatMass
 rename FFM fatFreeMass
 
+gen log_fatMass = ln(fatMass)
+gen log_fatFreeMass = ln(fatFreeMass)
+
 
 //Insulin & log_Insulin
 rename G_Insulin insulin
@@ -41,12 +44,15 @@ replace adiponectin=. if G_Adiponectin_Threshold!=1
 mdesc adiponectin // n=2,340 missing (19.89%)
 gen log_adiponectin = ln(adiponectin)
 
-//LDL
+//LDL + HDL
 rename LDL0 ldl
 mdesc ldl // n=158 missing (1,34%)
 
 rename HDL0 hdl
 rename Chol0 cholesterol
+
+gen log_ldl = ln(ldl)
+gen log_hdl = ln(hdl)
 
 //Blood Pressures: generate averages for persons with 3 measures
 mdesc BPDia1 
@@ -63,9 +69,13 @@ mdesc mbpdia // n=78 missing (0.66%)
 mdesc mbpsys //  n=106 missing (0.9%)
 sum mbpsys if mbpsys >=140 // ~1500 could be classified as having hypertension
 
+gen log_mbpsys = ln(mbpsys)
+gen log_mbpdia = ln(mbpdia)
+
 // new glucose //
 
 gen glucose0 = cond(RepeatGlucose0<=Glucose0,RepeatGlucose0,Glucose0)
+gen log_glucose0 = ln(glucose0)
 
 /*
 //Glucose: convert to binary variable with levels ≥ 5.6 mmol/L defined 
