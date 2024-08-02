@@ -5,7 +5,7 @@
 *smoking, diet, alcohol,cardiometabol_med
 ********************************************************************************
 //Sex
-label define sexlab 0 "female" 1 "male"
+label define sexlab 0 "Women" 1 "Men"
 label values sex sexlab
 tab sex, missing // no missing
 

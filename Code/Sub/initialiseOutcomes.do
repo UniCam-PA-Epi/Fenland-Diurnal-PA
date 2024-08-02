@@ -44,12 +44,15 @@ replace adiponectin=. if G_Adiponectin_Threshold!=1
 mdesc adiponectin // n=2,340 missing (19.89%)
 gen log_adiponectin = ln(adiponectin)
 
-//LDL
+//LDL + HDL
 rename LDL0 ldl
 mdesc ldl // n=158 missing (1,34%)
 
 rename HDL0 hdl
 rename Chol0 cholesterol
+
+gen log_ldl = ln(ldl)
+gen log_hdl = ln(hdl)
 
 //Blood Pressures: generate averages for persons with 3 measures
 mdesc BPDia1 
@@ -65,6 +68,9 @@ gen mbpdia = (BPDia1+BPDia2+BPDia3)/3
 mdesc mbpdia // n=78 missing (0.66%)
 mdesc mbpsys //  n=106 missing (0.9%)
 sum mbpsys if mbpsys >=140 // ~1500 could be classified as having hypertension
+
+gen log_mbpsys = ln(mbpsys)
+gen log_mbpdia = ln(mbpdia)
 
 // new glucose //
 
