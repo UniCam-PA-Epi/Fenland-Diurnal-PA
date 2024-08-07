@@ -31,8 +31,8 @@ local catVars   ethnic
                 education
                 income
                 smoke
-                work_s
-                marital_s
+                work_status
+                marital_status
                 season
                 cardiometabol_med
                 testsite

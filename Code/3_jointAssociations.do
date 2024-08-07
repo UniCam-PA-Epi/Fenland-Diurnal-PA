@@ -29,8 +29,8 @@ local catCovVars    i.ethnic
                     i.education
                     i.income
                     i.smoke
-                    i.work_s
-                    i.marital_s
+                    i.work_status
+                    i.marital_status
                     i.season
                     i.cardiometabol_med
                     i.testsite
