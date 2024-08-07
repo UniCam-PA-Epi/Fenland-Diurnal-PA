@@ -287,7 +287,7 @@ if _rc != 0{
 }
 
 joinby ID using "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
-drop _merge
+
 
 /*
 
