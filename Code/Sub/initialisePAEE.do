@@ -260,7 +260,8 @@ if _rc != 0{
                 _b[13._at]+_b[14._at]+_b[15._at]    +   ///
                 _b[16._at]+_b[17._at]+_b[18._at]    +   ///
                 _b[19._at]+_b[20._at]+_b[21._at]    +   ///
-                _b[22._at]+_b[23._at]+_b[24._at]        ///
+                _b[22._at]+_b[23._at]+_b[24._at]    -   ///
+                (24*_b[26._at])                         ///
                 )
 
         local qfactor_hat   = r(b)[1,1]                                           
@@ -270,7 +271,7 @@ if _rc != 0{
         local qfactor_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
 
         local postlist `postlist' (`qfactor_hat') (`qfactor_se') (`qfactor_lb') (`qfactor_ub') (`qfactor_p')
-
+        
         ******************
         ** Post results **
         ******************

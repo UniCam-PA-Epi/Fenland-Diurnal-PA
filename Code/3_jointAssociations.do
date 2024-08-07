@@ -3,6 +3,16 @@ version 17.0
 frame copy dataset tempset
 frame change tempset
 
+drop *_se *_lb *_ub *_p
+rename *_hat *
+
+gen paeeTt = (paeet*60)/1000
+gen sinAcro = sin(acrophase*2*_pi/24)
+gen cosAcro = cos(acrophase*2*_pi/24)
+
+
+asdf
+
 #delimit ;
 local outcomeVars   fatFreeMass
                     insulin
@@ -17,10 +27,7 @@ local outcomeVars   fatFreeMass
                     glucose0
                     ;
 
-local contCovVars   c.log_rel_amplitude
-                    c.sin_acro
-                    c.cos_acro
-                    c.age
+local contCovVars   c.age
                     c.diet 
                     c.alcohol
                     ;
@@ -41,12 +48,12 @@ local catCovVars    i.ethnic
 local modelLevel1 `contCovVars' `catCovVars'
 local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 
-capture erase "Results/2_jointAssociations.xlsx"
+capture erase "Results/3_jointAssociations.xlsx"
 local curRow = 1
 
 forvalues i = 1/2{
 
-    putexcel set "Results/2_jointAssociations.xlsx", sheet("modelLevel`i'") modify
+    putexcel set "Results/3_jointAssociations.xlsx", sheet("modelLevel`i'") modify
     putexcel A`curRow' = ("outcomeVar")
     putexcel B`curRow' = ("Count")
     putexcel C`curRow' = ("Women")
@@ -62,12 +69,15 @@ foreach curOutcomeVar of local outcomeVars{
 
     forvalues i = 1/2{
 
-        putexcel set "Results/2_jointAssociations.xlsx", sheet("modelLevel`i'") modify
+        putexcel set "Results/3_jointAssociations.xlsx", sheet("modelLevel`i'") modify
         putexcel A`curRow' = ("`curOutcomeVar'")
 
         #delimit ;
         glm `curOutcomeVar' 
             c.paeeTt##i.sex
+            c.amplitude##i.sex
+            c.acrophase##i.sex
+            c.qfactor##i.sex
             `modelLevel`i''
             if
             fatMass != .
@@ -77,6 +87,8 @@ foreach curOutcomeVar of local outcomeVars{
             vce(robust)
             ;
         #delimit cr
+
+        asdf
 
         count if e(sample) == 1 & sex == 0
         local womenCount = r(N)
