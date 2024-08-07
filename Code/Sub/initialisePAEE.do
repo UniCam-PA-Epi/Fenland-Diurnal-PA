@@ -4,9 +4,13 @@ version 17.0
 ** Redo Cosinor Modelling
 ********************************************************************************
 
+
 capture confirm file "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
 
 if _rc != 0{
+
+    snapshot erase _all
+    snapshot save 
 
     *************************
     ** Initialise postfile **
@@ -14,7 +18,7 @@ if _rc != 0{
 
     capture postutil clear
     #delimit ;
-    postfile paeepost  
+    postfile cosinorpost  
             str9 ID
             double(sin24_hat     sin24_se     sin24_lb     sin24_ub     sin24_p)
             double(cos24_hat     cos24_se     cos24_lb     cos24_ub     cos24_p)
@@ -262,7 +266,7 @@ if _rc != 0{
             ** Post results **
             ******************
 
-            post paeepost `postlist'
+            post cosinorpost `postlist'
 
             estimates clear
             restore
@@ -271,14 +275,15 @@ if _rc != 0{
         else noisi di "Insufficient data: `curID'"
     }
 
-    postclose paeepost
-
+    postclose cosinorpost
+    snapshot restore 1
+    snapshot erase _all
 }
 
-else joinby ID using "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
+joinby ID using "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
 drop _merge
 
-
+asdf
 
 
 /*
