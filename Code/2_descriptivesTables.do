@@ -40,13 +40,13 @@ local catVars   ethnic
 
 #delimit cr
 
-capture erase "Results/1_descriptiveTables.xlsx"
+capture erase "Results/2_descriptiveTables.xlsx"
 
 levelsof sex, local(sexLevels)
 foreach curSex of local sexLevels{
     
     local curSexLabel : label (sex) `curSex'
-    putexcel set "Results/1_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
+    putexcel set "Results/2_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
 
     preserve
     keep if sex == `curSex'
