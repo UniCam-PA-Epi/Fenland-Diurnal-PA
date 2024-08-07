@@ -1,10 +1,9 @@
 version 17.0
 
-clear
-set more off
-set seed 1234
+frame copy dataset tempset
+frame change tempset
 
-args filePath getPackages
+args getPackages
 if "`getPackages'" == "" local getPackages = 0
 
 if `getPackages' == 1{
@@ -16,12 +15,6 @@ if `getPackages' == 1{
     capture ssc install colrspace
     capture net install grc1leg.pkg
 }
-
-use "`filePath'"
-
-qui do Code/Sub/initialiseCovariates.do
-qui do Code/Sub/initialiseOutcomes.do
-qui do Code/Sub/initialisePAEE.do
 
 #delimit ;
 local   plotVars    fatMass
@@ -141,3 +134,6 @@ gr_edit .legend.Edit
 
 graph export "Results/3_violinPlots.png" , height(2000) width(2750) replace
 graph close _all
+
+frame change dataset
+frame drop tempset

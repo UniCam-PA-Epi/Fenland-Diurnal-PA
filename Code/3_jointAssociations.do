@@ -1,17 +1,7 @@
 version 17.0
 
-clear
-estimates drop _all
-set more off
-set seed 1234
-
-args filePath
-
-use "`filePath'"
-
-qui do Code/Sub/initialiseCovariates.do
-qui do Code/Sub/initialiseOutcomes.do
- do Code/Sub/initialisePAEE.do
+frame copy dataset tempset
+frame change tempset
 
 #delimit ;
 local outcomeVars   fatFreeMass
@@ -120,3 +110,5 @@ foreach curOutcomeVar of local outcomeVars{
     }
 }
 
+frame change dataset
+frame drop tempset

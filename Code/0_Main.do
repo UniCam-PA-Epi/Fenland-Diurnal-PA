@@ -2,11 +2,11 @@ version 17.0
 
 clear
 set more off
-frames reset
 set seed 1234
 
-args filePath
+args rootPath fenlandReleaseFile cosinorEstimatesFile
 
-do Code/1_descriptivesTables.do "`filePath'"
-do Code/2_jointAssociations.do  "`filePath'"
-do Code/3_violinPlots.do        "`filePath'"
+do Code/1_initialiseDataset.do "`rootPath'" "`fenlandReleaseFile'" "`cosinorEstimatesFile'"
+do Code/2_descriptivesTables.do 
+do Code/3_jointAssociations.do  
+do Code/4_violinPlots.do        

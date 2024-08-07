@@ -1,17 +1,7 @@
 version 17.0
 
-clear
-set more off
-set seed 1234
-
-args filePath
-
-use "`filePath'"
-
-qui do Code/Sub/initialiseCovariates.do
-qui do Code/Sub/initialiseOutcomes.do
-qui do Code/Sub/initialisePAEE.do
-
+frame copy dataset tempset
+frame change tempset
 
 ********************************************************************************
 ** Descriptives Tables (Table 1)
@@ -119,3 +109,6 @@ foreach curSex of local sexLevels{
     putexcel close
 
 }
+
+frame change dataset
+frame drop tempset
