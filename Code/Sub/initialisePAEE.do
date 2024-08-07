@@ -4,13 +4,15 @@ version 17.0
 ** Redo Cosinor Modelling
 ********************************************************************************
 
+args rootPath cosinorEstimatesFile
+
 //capture erase "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
-capture confirm file "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
+capture confirm file "`rootPath'/`cosinorEstimatesFile'"
 
 if _rc != 0{
 
-    frame copy default dataset
-    frame change dataset
+    frame copy dataset tempset
+    frame change tempset
 
     *************************
     ** Initialise postfile **
@@ -29,7 +31,7 @@ if _rc != 0{
             double(paeet_hat     paeet_se     paeet_lb     paeet_ub     paeet_p     )  
             double(qfactor_hat   qfactor_se   qfactor_lb   qfactor_ub   qfactor_p   )    
             using
-            "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
+            "`rootPath'/`cosinorEstimatesFile'"
             ;
     #delimit cr
 
@@ -48,34 +50,34 @@ if _rc != 0{
     ** Perform IQR outlier analysis loop **
     ***************************************
 
-    frame copy dataset tempframe
-    frame change tempframe
+    frame copy tempset tempsub
+    frame change tempsub
 
     collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
 
-    frame change dataset
-    frlink m:1 ID, frame(tempframe)
-    frget *, from(tempframe)
-    frame drop tempframe
+    frame change tempset
+    frlink m:1 ID, frame(tempsub)
+    frget *, from(tempsub)
+    frame drop tempsub
 
     gen upperOutlier = cond((paee_hour - p75) / (iqr) >=  2 ,1,0)
     gen lowerOutlier = cond((paee_hour - p25) / (iqr) <= -2 ,1,0)
     
     drop if upperOutlier == 1 | lowerOutlier == 1
-    drop upperOutlier lowerOutlier tempframe p25 p75 iqr
+    drop upperOutlier lowerOutlier tempsub p25 p75 iqr
 
-    frame copy dataset tempframe
-    frame change tempframe
+    frame copy tempset tempsub
+    frame change tempsub
 
     collapse (count) notout=paee_hour, by(ID)
 
-    frame change dataset
-    frlink m:1 ID, frame(tempframe)
-    frget *, from(tempframe)
-    frame drop tempframe
+    frame change tempset
+    frlink m:1 ID, frame(tempsub)
+    frget *, from(tempsub)
+    frame drop tempsub
 
     drop if notout <20
-    drop notout tempframe
+    drop notout tempsub
 
     ******************************
     ** Begin main analysis loop **
@@ -90,8 +92,8 @@ if _rc != 0{
         ** Restrict sample to current ID and initialize postlist **
         ***********************************************************
 
-        frame put * if ID == "`curID'", into(tempframe)
-        frame change tempframe
+        frame put * if ID == "`curID'", into(tempsub)
+        frame change tempsub
 
         local postlist ("`curID'")
         
@@ -275,18 +277,18 @@ if _rc != 0{
 
         post cosinorpost `postlist'
 
-        frame change dataset
-        frame drop tempframe
+        frame change tempset
+        frame drop tempsub
 
     }
 
     postclose cosinorpost
     
-    frame change default
-    frame drop dataset
+    frame change dataset
+    frame drop tempset
 }
 
-joinby ID using "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
+joinby ID using "`rootPath'/`cosinorEstimatesFile'"
 
 
 /*
