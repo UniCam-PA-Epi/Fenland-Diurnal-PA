@@ -2,6 +2,7 @@ version 17.0
 
 clear
 set more off
+frames reset
 set seed 1234
 
 args filePath

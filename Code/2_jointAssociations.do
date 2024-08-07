@@ -11,7 +11,7 @@ use "`filePath'"
 
 qui do Code/Sub/initialiseCovariates.do
 qui do Code/Sub/initialiseOutcomes.do
-qui do Code/Sub/initialisePAEE.do
+ do Code/Sub/initialisePAEE.do
 
 #delimit ;
 local outcomeVars   fatFreeMass
