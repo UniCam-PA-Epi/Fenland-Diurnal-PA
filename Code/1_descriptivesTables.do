@@ -10,7 +10,7 @@ use "`filePath'"
 
 qui do Code/Sub/initialiseCovariates.do
 qui do Code/Sub/initialiseOutcomes.do
- do Code/Sub/initialisePAEE.do
+qui do Code/Sub/initialisePAEE.do
 
 
 ********************************************************************************
