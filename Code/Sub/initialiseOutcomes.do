@@ -77,6 +77,8 @@ gen log_mbpdia = ln(mbpdia)
 gen glucose0 = cond(RepeatGlucose0<=Glucose0,RepeatGlucose0,Glucose0)
 gen log_glucose0 = ln(glucose0)
 
+gen glucose120 = cond(RepeatGlucose120<=Glucose120,RepeatGlucose120,Glucose120)
+
 /*
 //Glucose: convert to binary variable with levels ≥ 5.6 mmol/L defined 
 //as “high glucose level” and < 5.6 mmol/L defined as “low glucose level” 
