@@ -12,6 +12,8 @@ rename *_hat *
 
 gen sinCosinorAcro = sin(acrophase*2*_pi/24)
 gen cosCosinorAcro = cos(acrophase*2*_pi/24)
+gen sinCosinorAcro8 = sin(acrophase*2*_pi/8)
+gen cosCosinorAcro8 = cos(acrophase*2*_pi/8)
 gen maxCosinorPaee = max*60/1000
 gen minCosinorPaee = min*60/1000 
 
@@ -102,6 +104,10 @@ foreach curOutcomeVar of local outcomeVars{
                      (`modelLevel`i'') 
                      (c.maxCosinorPaee       c.minCosinorPaee)
                      (c.maxCosinorPaee#i.sex c.minCosinorPaee#i.sex)
+
+                     //(c.maxCosinorPaee#c.minCosinorPaee)
+                     //(c.maxCosinorPaee#c.minCosinorPaee#i.sex)
+
                      (c.sinCosinorAcro       c.cosCosinorAcro)
                      (c.sinCosinorAcro#i.sex c.cosCosinorAcro#i.sex)
                      ,
@@ -109,7 +115,7 @@ foreach curOutcomeVar of local outcomeVars{
                      link(`=cond("`curOutcomeVar'"=="CCMR","identity","log")')
                      ;
         #delimit cr
-        
+        asdf
         estimates store fullModel
 
         putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
@@ -206,8 +212,7 @@ foreach curOutcomeVar of local outcomeVars{
             local midPoint = r(b)[1,1]
             local curCol = char(69+4*`curSex')
             putexcel `curCol'`curRow' = (`"`=trim("`: display %10.2f `midPoint''")'"')
-
-            
+         
         }
     }
 }
