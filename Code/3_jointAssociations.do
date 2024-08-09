@@ -15,40 +15,6 @@ gen cosCosinorAcro = cos(acrophase*2*_pi/24)
 gen maxCosinorPaee = max*60/1000
 gen minCosinorPaee = min*60/1000 
 
-forvalues curSex = 0/1{
-
-    egen fatFreeMass_std_s`curSex' = std((fatFreeMass)) if sex == `curSex'
-    egen insulin_std_s`curSex'     = std((insulin)) if sex == `curSex'
-    egen nefa_std_s`curSex'        = std((nefa)) if sex == `curSex'
-    egen adiponectin_std_s`curSex'= std((adiponectin)) if sex == `curSex'
-    egen leptin_std_s`curSex'      = std((leptin)) if sex == `curSex'
-    egen crp_std_s`curSex'         = std((crp)) if sex == `curSex'
-    egen mbpsys_std_s`curSex'      = std((mbpsys)) if sex == `curSex'
-    egen glucose120_std_s`curSex' = std((glucose120)) if sex == `curSex'
-
-}
-
-egen fatFreeMass_std   = rowtotal(fatFreeMass_std_*)    , missing
-egen insulin_std       = rowtotal(insulin_std_*)    , missing
-egen nefa_std          = rowtotal(nefa_std_*)    , missing
-egen adiponectin_std   = rowtotal(adiponectin_std_*)    , missing
-egen leptin_std        = rowtotal(leptin_std_*)    , missing
-egen crp_std           = rowtotal(crp_std_*)    , missing
-egen mbpsys_std        = rowtotal(mbpsys_std_*)    , missing
-egen glucose120_std    = rowtotal(glucose120_std_*)    , missing
-
-replace insulin_std     = -insulin_std
-replace nefa_std        = -nefa_std 
-replace leptin_std      = -leptin_std 
-replace crp_std         = -crp_std 
-replace mbpsys_std      = -mbpsys_std 
-replace glucose120_std  = -glucose120_std 
-
-egen notmiss = rowmiss( insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std)
-egen CCMR = rowmean( insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std) if notmiss ==0
-
-drop notmiss *_std*
-
 #delimit ;
 local outcomeVars   //CCMR
                     fatFreeMass
