@@ -110,8 +110,8 @@ replace crp_std         = -crp_std
 replace mbpsys_std      = -mbpsys_std 
 replace glucose120_std  = -glucose120_std 
 
-egen notmiss = rowmiss( insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std)
-egen CCMR = rowmean( insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std) if notmiss ==0
+egen notmiss = rowmiss(fatFreeMass_std adiponectin_std insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std)
+egen CCMR = rowmean(fatFreeMass_std adiponectin_std insulin_std nefa_std mbpsys_std leptin_std crp_std glucose120_std) if notmiss ==0
 
 drop notmiss *_std*
 

@@ -12,6 +12,8 @@ rename *_hat *
 
 gen sinCosinorAcro = sin(acrophase*2*_pi/24)
 gen cosCosinorAcro = cos(acrophase*2*_pi/24)
+gen sinCosinorAcro12 = sin(acrophase*2*_pi/12)
+gen cosCosinorAcro12 = cos(acrophase*2*_pi/12)
 gen sinCosinorAcro8 = sin(acrophase*2*_pi/8)
 gen cosCosinorAcro8 = cos(acrophase*2*_pi/8)
 gen maxCosinorPaee = max*60/1000
@@ -57,7 +59,7 @@ local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 
 capture erase "Results/3_jointAssociations.xlsx"
 
-forvalues i = 1/2{
+forvalues i = 2/2{
 
     putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
     putexcel A1 = ("outcomeVar")
@@ -100,22 +102,28 @@ foreach curOutcomeVar of local outcomeVars{
     forvalues i = 1/2{
 
         #delimit ;
-        nestreg: glm `curOutcomeVar' 
+        nestreg, lr: glm `curOutcomeVar' 
                      (`modelLevel`i'') 
                      (c.maxCosinorPaee       c.minCosinorPaee)
                      (c.maxCosinorPaee#i.sex c.minCosinorPaee#i.sex)
 
-                     //(c.maxCosinorPaee#c.minCosinorPaee)
-                     //(c.maxCosinorPaee#c.minCosinorPaee#i.sex)
+                     (c.maxCosinorPaee#c.minCosinorPaee)
+                     (c.maxCosinorPaee#c.minCosinorPaee#i.sex)
 
                      (c.sinCosinorAcro       c.cosCosinorAcro)
                      (c.sinCosinorAcro#i.sex c.cosCosinorAcro#i.sex)
+
+                     //(c.sinCosinorAcro12       c.cosCosinorAcro12)
+                     //(c.sinCosinorAcro12#i.sex c.cosCosinorAcro12#i.sex)
+
+                     //(c.sinCosinorAcro8       c.cosCosinorAcro8)
+                     //(c.sinCosinorAcro8#i.sex c.cosCosinorAcro8#i.sex)
                      ,
                      family(gaussian)
                      link(`=cond("`curOutcomeVar'"=="CCMR","identity","log")')
                      ;
         #delimit cr
-        asdf
+     asdf
         estimates store fullModel
 
         putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
