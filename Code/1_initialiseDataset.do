@@ -11,5 +11,5 @@ use "`rootPath'/`fenlandReleaseFile'"
 
 do Code/Sub/initialiseCovariates.do
 do Code/Sub/initialiseOutcomes.do
-do Code/Sub/initialisePAEE.do "`rootPath'" "`cosinorEstimatesFile'"  
+do Code/Sub/initialisePAEE_b.do "`rootPath'" "`cosinorEstimatesFile'"  
 
