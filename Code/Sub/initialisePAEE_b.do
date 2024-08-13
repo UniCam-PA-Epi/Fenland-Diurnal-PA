@@ -240,10 +240,11 @@ if _rc != 0{
             **********************************************************************
 
             local marginList
-            forvalues i = 0(0.1)24{    
+            forvalues i = 0(0.1)24{
                 foreach j in 24 12 8{
                     capture di _b[sin`j'] _b[cos`j']
                     if _rc == 0 local per`j' sin`j'=(`=sin(`i'*2*_pi/`j')')cos`j'=(`=cos(`i'*2*_pi/`j')')
+                    else        local per`j'
 
                 }
                 local marginList `marginList' at(`per24'`per12'`per8')
