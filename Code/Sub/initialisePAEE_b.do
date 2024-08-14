@@ -168,16 +168,16 @@ if _rc != 0{
 
         noisi di "Cosinor modelling: `curID'"
 
-        ***********************************************************
-        ** Restrict sample to current ID and initialize postlist **
-        ***********************************************************
+        ***********************************
+        ** Restrict sample to current ID **
+        ***********************************
 
         frame put * if ID == "`curID'", into(tempsub)
         frame change tempsub
 
-        ***********************************************************************************************
-        ** Apply cosinor GLM model, using log-link function to ensure paee values are always positive **
-        ************************************************************************************************
+        *****************************************************************
+        ** Apply cosinor GLM model, using gamma with log-link function **
+        *****************************************************************
 
         glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8, family(gamma) link(log)
  
@@ -332,9 +332,9 @@ if _rc != 0{
             local postlist `postlist' (`maxHour_hat')  (`maxHour_se')  (`maxHour_lb')  (`maxHour_ub')  (`maxHour_p')  
             local postlist `postlist' (`maxValue_hat') (`maxValue_se') (`maxValue_lb') (`maxValue_ub') (`maxValue_p')  
 
-            ***************************************************
-            ** Estimate total PAEE
-            ***************************************************
+            *************************
+            ** Estimate total PAEE **
+            *************************
 
             local totalPAEE_hat   = .                                      
             local totalPAEE_se    = .                                   
@@ -374,7 +374,11 @@ if _rc != 0{
             }
 
             local postlist `postlist' (`totalPAEE_hat') (`totalPAEE_se') (`totalPAEE_lb') (`totalPAEE_ub') (`totalPAEE_p')  
-            
+                                       
+            *********************************
+            ** Output results to post file **
+            *********************************
+
             post cosinorpost `postlist'
             
         }
