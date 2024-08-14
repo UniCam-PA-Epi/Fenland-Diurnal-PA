@@ -7,29 +7,46 @@ version 17.0
 args rootPath cosinorEstimatesFile
 
 
+
+****************************************************************
+** Define cosinor model specification for max hour estimation **
+****************************************************************
+
 cap mata: mata drop cosinorModel()
 mata:
-    void cosinorModel(real scalar todo, real vector b, real vector sinCoef, real vector cosCoef, real scalar mesorCoef, val, grad, hess)
+    void cosinorModel(real scalar todo      , 
+                      real vector b         , 
+                      real vector sinCoef   , 
+                      real vector cosCoef   , 
+                      real scalar mesorCoef , 
+                      val                   , 
+                      grad                  , 
+                      hess)
     {
-
         val =   exp(
                 sinCoef[1]:*sin(b:*2:*pi():/24) :+ cosCoef[1]:*cos(b:*2:*pi():/24)  :+ 
                 sinCoef[2]:*sin(b:*2:*pi():/12) :+ cosCoef[2]:*cos(b:*2:*pi():/12)  :+
                 sinCoef[3]:*sin(b:*2:*pi():/8)  :+ cosCoef[3]:*cos(b:*2:*pi():/8)   :+
                 mesorCoef
                 )
-
     }
 end
 
+
+****************************************************************************
+** Define function to find hour of global maximum of fitted cosinor model **
+****************************************************************************
+
 cap mata: mata drop estimateMaxHour()
 mata:
-    void estimateMaxHour(real vector sinCoef, real vector cosCoef, real scalar mesorCoef)
+    void estimateMaxHour(real vector sinCoef    , 
+                         real vector cosCoef    , 
+                         real scalar mesorCoef)
     {
 
         transmorphic S
-        vector bh, maxInd, maxCount
-        scalar i, maxHour_hat, maxHour_se, maxValue_hat
+        vector bh, maxInd, maxCount, maxHour_hat, maxHour_se, maxValue_hat
+        scalar i
 
         maxHour_hat  = J(1,0,.)
         maxHour_se   = J(1,0,.) 
@@ -60,11 +77,9 @@ mata:
 end
 
 
-
-
 capture confirm file "`rootPath'/`cosinorEstimatesFile'"
 
-if _rc == 0{
+if _rc != 0{
 
     frame copy dataset tempset
     frame change tempset
@@ -88,57 +103,61 @@ if _rc == 0{
     }
 
     capture postutil clear
-    postfile cosinorpost str9 ID double(`postList') using "`rootPath'/temp.dta", replace //"`rootPath'/`cosinorEstimatesFile'" , replace
+    postfile cosinorpost str9 ID double(`postList') using "`rootPath'/`cosinorEstimatesFile'" , replace
 
-    ******************************************************
-    ** Initialise dataset + outcome modelling variables **
-    ******************************************************
-    
-    keep ID paee_hour*
-    reshape long paee_hour, i(ID) j(hour)
-    drop if paee_hour == .
+    qui{
 
-    gen sin24 = sin(hour*2*_pi/24)
-    gen cos24 = cos(hour*2*_pi/24)
+        ******************************************************
+        ** Initialise dataset + outcome modelling variables **
+        ******************************************************
+        
+        keep ID paee_hour*
+        reshape long paee_hour, i(ID) j(hour)
+        drop if paee_hour == .
 
-    gen sin12 = sin(hour*2*_pi/12)
-    gen cos12 = cos(hour*2*_pi/12)
+        gen sin24 = sin(hour*2*_pi/24)
+        gen cos24 = cos(hour*2*_pi/24)
 
-    gen sin8 = sin(hour*2*_pi/8)
-    gen cos8 = cos(hour*2*_pi/8)
+        gen sin12 = sin(hour*2*_pi/12)
+        gen cos12 = cos(hour*2*_pi/12)
 
-    ***************************************
-    ** Perform IQR outlier analysis loop **
-    ***************************************
+        gen sin8 = sin(hour*2*_pi/8)
+        gen cos8 = cos(hour*2*_pi/8)
 
-    frame copy tempset tempsub
-    frame change tempsub
+        ***************************************
+        ** Perform IQR outlier analysis loop **
+        ***************************************
 
-    collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
+        frame copy tempset tempsub
+        frame change tempsub
 
-    frame change tempset
-    frlink m:1 ID, frame(tempsub)
-    frget *, from(tempsub)
-    frame drop tempsub
+        collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
 
-    gen upperOutlier = cond((paee_hour - p75) / (iqr) >=  2 ,1,0)
-    gen lowerOutlier = cond((paee_hour - p25) / (iqr) <= -2 ,1,0)
-    
-    drop if upperOutlier == 1 | lowerOutlier == 1
-    drop upperOutlier lowerOutlier tempsub p25 p75 iqr
+        frame change tempset
+        frlink m:1 ID, frame(tempsub)
+        frget *, from(tempsub)
+        frame drop tempsub
 
-    frame copy tempset tempsub
-    frame change tempsub
+        gen upperOutlier = cond((paee_hour - p75) / (iqr) >=  2 ,1,0)
+        gen lowerOutlier = cond((paee_hour - p25) / (iqr) <= -2 ,1,0)
+        
+        drop if upperOutlier == 1 | lowerOutlier == 1
+        drop upperOutlier lowerOutlier tempsub p25 p75 iqr
 
-    collapse (count) notout=paee_hour, by(ID)
+        frame copy tempset tempsub
+        frame change tempsub
 
-    frame change tempset
-    frlink m:1 ID, frame(tempsub)
-    frget *, from(tempsub)
-    frame drop tempsub
+        collapse (count) notout=paee_hour, by(ID)
 
-    drop if notout <20
-    drop notout tempsub
+        frame change tempset
+        frlink m:1 ID, frame(tempsub)
+        frget *, from(tempsub)
+        frame drop tempsub
+
+        drop if notout <20
+        drop notout tempsub
+
+    }
 
     ******************************
     ** Begin main analysis loop **
@@ -280,7 +299,7 @@ if _rc == 0{
             mat cosCoef     = `cos24_hat' , `cos12_hat' , `cos8_hat'
             mat mesorCoef   = `mesor_hat'
 
-            qui mata: estimateMaxHour(st_matrix("sinCoef"),st_matrix("cosCoef"),st_matrix("mesorCoef"))
+            qui mata: estimateMaxHour(st_matrix("sinCoef"), st_matrix("cosCoef"), st_matrix("mesorCoef"))
             
             if `maxHour_hat' != .{
 
@@ -296,7 +315,7 @@ if _rc == 0{
 
                 }
 
-                capture margin,  at(`per24'`per12'`per8') post
+                capture margin, at(`per24'`per12'`per8') post
 
                 if _rc == 0{
 
@@ -324,9 +343,9 @@ if _rc == 0{
             local totalPAEE_p     = .
 
             local marginList
-            forvalues i = 0(1)23{
-                foreach j in 24 12 8{
-                    local per`j' sin`j'=(`=sin(`i'*2*_pi/`j')')cos`j'=(`=cos(`i'*2*_pi/`j')')
+            forvalues h = 0(1)23{
+                foreach i in 24 12 8{
+                    local per`i' sin`i'=(`=sin(`h'*2*_pi/`i')')cos`i'=(`=cos(`h'*2*_pi/`i')')
                 }
                 local marginList `marginList' at(`per24'`per12'`per8')
             }
