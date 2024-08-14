@@ -22,7 +22,10 @@ mata:
                       val                   , 
                       grad                  , 
                       hess)
-    {
+    {   
+
+        // Designation for model.  Note the "exp", which corresponds to "log link function" in glm used
+
         val =   exp(
                 sinCoef[1]:*sin(b:*2:*pi():/24) :+ cosCoef[1]:*cos(b:*2:*pi():/24)  :+ 
                 sinCoef[2]:*sin(b:*2:*pi():/12) :+ cosCoef[2]:*cos(b:*2:*pi():/12)  :+
@@ -52,6 +55,8 @@ mata:
         maxHour_se   = J(1,0,.) 
         maxValue_hat = J(1,0,.)
 
+        // Run optimisation loop, using different initial guess for hour (i) each time
+
         for (i=0; i<=23; i++){
 
             S  = optimize_init()
@@ -61,6 +66,8 @@ mata:
             optimize_init_evaluator(S, &cosinorModel())
             optimize_init_params(S, J(1,1,i))
             bh = optimize(S)
+
+            // Only keep results that are within 0 to 24 hours
             
             if (optimize_result_params(S):>=0 :& optimize_result_params(S):<=24){
                 maxHour_hat = maxHour_hat, optimize_result_params(S)
@@ -68,6 +75,8 @@ mata:
                 maxValue_hat = maxValue_hat, optimize_result_value(S)
             }
         }
+
+        // Output max hour hat and se
 
         maxindex(maxValue_hat,2,maxInd,maxCount)
         st_local("maxHour_hat" , strofreal(maxHour_hat[maxInd[1]]))
@@ -90,17 +99,21 @@ if _rc != 0{
 
     local postList mesor_hat mesor_se mesor_lb mesor_ub mesor_p
 
+    // Start with cosinor submodel vars
+
     foreach curVar in sin cos acrophase amplitude{
         foreach i in 24 12 8{
-
             local postList `postList' `curVar'`i'_hat `curVar'`i'_se `curVar'`i'_lb `curVar'`i'_ub `curVar'`i'_p
-
         }
     }
 
+    // Next with cosinor whole-model vars
+
     foreach curVar in maxHour maxValue totalPAEE{
-        local postList `postList' `curVar'`i'_hat `curVar'`i'_se `curVar'`i'_lb `curVar'`i'_ub `curVar'`i'_p
+        local postList `postList' `curVar'_hat `curVar'_se `curVar'_lb `curVar'_ub `curVar'_p
     }
+
+    // Set postfile
 
     capture postutil clear
     postfile cosinorpost str9 ID double(`postList') using "`rootPath'/`cosinorEstimatesFile'" , replace
@@ -114,6 +127,8 @@ if _rc != 0{
         keep ID paee_hour*
         reshape long paee_hour, i(ID) j(hour)
         drop if paee_hour == .
+
+        // Generate sin and cos axis variables for 24, 12, and 8 hour periods
 
         gen sin24 = sin(hour*2*_pi/24)
         gen cos24 = cos(hour*2*_pi/24)
@@ -131,6 +146,8 @@ if _rc != 0{
         frame copy tempset tempsub
         frame change tempsub
 
+        // Collapse data set on percentiles, then exclude values that are + or - 2 IQR
+
         collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
 
         frame change tempset
@@ -143,6 +160,8 @@ if _rc != 0{
         
         drop if upperOutlier == 1 | lowerOutlier == 1
         drop upperOutlier lowerOutlier tempsub p25 p75 iqr
+
+        // Drop those with more than 4 data points excluded by IQR outlier analysis
 
         frame copy tempset tempsub
         frame change tempsub
@@ -180,7 +199,9 @@ if _rc != 0{
         *****************************************************************
 
         glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8, family(gamma) link(log)
- 
+
+        // If model converges, continue.
+
         if e(converged)==1{
 
             estimates store m1
@@ -190,6 +211,8 @@ if _rc != 0{
             **********************************
             ** Get sin and cos coefficients **
             **********************************
+
+            // Get "midline-estimating statistic of rhythm" (i.e. mesor) value, which is just the constant of the model
 
             local mesor_hat = _b[_cons]                                         
             local mesor_se  = _se[_cons]                                        
@@ -210,6 +233,8 @@ if _rc != 0{
                     local `curAxis'`i'_p    = .
 
                     capture di _b[`curAxis'`i']
+
+                    // Get coefficients for each cosinor submodel
 
                     if _rc == 0{
 
@@ -235,6 +260,8 @@ if _rc != 0{
                 local acrophase`i'_lb    = .     
                 local acrophase`i'_ub    = . 
                 local acrophase`i'_p     = .
+
+                // For acrophase computation, reference quadrant is changed depending on + or - for sin beta
 
                 capture nlcom cond(_b[sin`i']<0,`i',0) + atan2(_b[sin`i'],_b[cos`i'])*`i'/(2*_pi) 
 
@@ -295,9 +322,13 @@ if _rc != 0{
             local maxValue_ub    = .   
             local maxValue_p     = .
 
+            // Populate matrices with model coeffients to send into mata
+
             mat sinCoef     = `sin24_hat' , `sin12_hat' , `sin8_hat' 
             mat cosCoef     = `cos24_hat' , `cos12_hat' , `cos8_hat'
             mat mesorCoef   = `mesor_hat'
+
+            // Run mata code to do multi-start optimization of hour where max value occurs in cosinor model
 
             qui mata: estimateMaxHour(st_matrix("sinCoef"), st_matrix("cosCoef"), st_matrix("mesorCoef"))
             
@@ -309,11 +340,15 @@ if _rc != 0{
                 local maxHour_ub    = `maxHour_hat' + invnormal(0.975)*sqrt(`maxHour_se' )      
                 local maxHour_p     = 2*normal(-abs(`maxHour_hat'/sqrt(`maxHour_se')))
 
+                // Initialize "at statement" for marginal hour value where global max occurs
+
                 foreach i in 24 12 8{
                     
                     local per`i' sin`i'=(`=sin(`maxHour_hat'*2*_pi/`i')')cos`i'=(`=cos(`maxHour_hat'*2*_pi/`i')')
 
                 }
+
+                // Compute marginal value at hour where global max occurs
 
                 capture margin, at(`per24'`per12'`per8') post
 
@@ -342,6 +377,8 @@ if _rc != 0{
             local totalPAEE_ub    = .     
             local totalPAEE_p     = .
 
+            // Initilize at margin list as each hour of the day, across each cosinor submodel
+
             local marginList
             forvalues h = 0(1)23{
                 foreach i in 24 12 8{
@@ -350,11 +387,15 @@ if _rc != 0{
                 local marginList `marginList' at(`per24'`per12'`per8')
             }
 
+            // Get marginal values
+
             estimates restore m1
             capture margin, `marginList' post
 
             if _rc == 0{
-            
+                
+                // Compute sum of marginal values at each hour to compute total PAEE
+
                 capture nlcom   _b[1._at]  + _b[2._at]  + _b[3._at]  + _b[4._at]  +     ///
                                 _b[5._at]  + _b[6._at]  + _b[7._at]  + _b[8._at]  +     ///
                                 _b[9._at]  + _b[10._at] + _b[11._at] + _b[12._at] +     ///
