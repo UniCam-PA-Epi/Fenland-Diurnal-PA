@@ -256,7 +256,7 @@ foreach curOutcomeVar of local outcomeVars{
             }
         }
 
-
+        gen obs = _n/64
         gen hat = .
         gen lb = .
         gen ub = .
@@ -283,8 +283,35 @@ foreach curOutcomeVar of local outcomeVars{
                     replace ub  = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])  in `j'
 
                 }
-                gen obs = _n/64
-                line hat obs in 1/64 || line lb obs in 1/64 || line ub obs in 1/64
+                
+                #delimit ;
+                twoway  (
+                        rarea lb ub obs if hat !=.
+                        ,
+                        fcolor(navy%40)
+                        lcolor(navy%0)
+                        )
+                        (
+					    line hat obs  if hat !=.
+					    ,
+					    lcolor(navy)
+					    )
+                        (
+                        func y=0
+                        ,
+					    lcolor(gs8)
+					    lpattern(dash)
+					    lwidth(0.2)
+					    range(0 1)
+					    )
+                        (
+                        ,
+ 					    graphregion(color(white))
+					    legend(off)                       
+                        )
+                        ;                      
+                #delimit cr
+         
                 asdf
             }
             
