@@ -1,12 +1,20 @@
 version 17.0
 
-********************************************************************************
-** Redo Cosinor Modelling
-********************************************************************************
+***********************
+** Cosinor Modelling **
+***********************
+
+**  Performs cosinor analysis to model rhythmic patterns in physical 
+**  activity energy expenditure (PAEE) data. It fits a gamma GLM with a log link function 
+**  to estimate the parameters of the cosinor model, including the mesor, amplitudes, and 
+**  acrophases for 24-hour, 12-hour, and 8-hour cycles. The script also estimates the hour 
+**  of the day where the maximum PAEE occurs and the total PAEE over 24 hours.
+**  Performs IQR-based outlier removal before fitting the cosinor model. 
+**  Uses a multi-start optimization approach to estimate the hour of maximum PAEE.
+**  Total PAEE is estimated as the average of marginal values computed at each hour within 24-hours.
 
 args rootPath cosinorEstimatesFile
 
-//capture erase "C:\Users\tg421\OneDrive - University of Cambridge\Fenland diurnal PA and Met risk\cosinorEstimates.dta"
 capture confirm file "`rootPath'/`cosinorEstimatesFile'"
 
 if _rc != 0{
@@ -18,271 +26,415 @@ if _rc != 0{
     ** Initialise postfile **
     *************************
 
+    local postList mesor_hat mesor_se mesor_lb mesor_ub mesor_p
+
+    // Start with cosinor submodel vars
+
+    foreach curVar in sin cos acrophase amplitude{
+        foreach i in 24 12 8{
+            local postList `postList' `curVar'`i'_hat `curVar'`i'_se `curVar'`i'_lb `curVar'`i'_ub `curVar'`i'_p
+        }
+    }
+
+    // Next with cosinor whole-model vars
+
+    foreach curVar in maxHour maxValue totalPAEE{
+        local postList `postList' `curVar'_hat `curVar'_se `curVar'_lb `curVar'_ub `curVar'_p
+    }
+
+    // Set postfile
+
     capture postutil clear
-    #delimit ;
-    postfile cosinorpost  
-            str9 ID
-            double(sin24_hat     sin24_se     sin24_lb     sin24_ub     sin24_p     )
-            double(cos24_hat     cos24_se     cos24_lb     cos24_ub     cos24_p     )
-            double(acrophase_hat acrophase_se acrophase_lb acrophase_ub acrophase_p )   
-            double(max_hat       max_se       max_lb       max_ub       max_p       )                     
-            double(min_hat       min_se       min_lb       min_ub       min_p       ) 
-            double(amplitude_hat amplitude_se amplitude_lb amplitude_ub amplitude_p ) 
-            double(paeet_hat     paeet_se     paeet_lb     paeet_ub     paeet_p     )  
-            double(qfactor_hat   qfactor_se   qfactor_lb   qfactor_ub   qfactor_p   )    
-            using
-            "`rootPath'/`cosinorEstimatesFile'"
-            ;
-    #delimit cr
+    postfile cosinorpost str9 ID double(`postList') using "`rootPath'/`cosinorEstimatesFile'" , replace
 
-    ******************************************************
-    ** Initialise dataset + outcome modelling variables **
-    ******************************************************
-    
-    keep ID paee_hour*
-    reshape long paee_hour, i(ID) j(hour)
-    drop if paee_hour == .
 
-    gen sin24 = sin(hour*2*_pi/24)
-    gen cos24 = cos(hour*2*_pi/24)
+    ****************************************************************
+    ** Define cosinor model specification for max hour estimation **
+    ****************************************************************
 
-    ***************************************
-    ** Perform IQR outlier analysis loop **
-    ***************************************
+    cap mata: mata drop cosinorModel()
+    mata:
+        void cosinorModel(real scalar todo      , 
+                        real vector b         , 
+                        real vector sinCoef   , 
+                        real vector cosCoef   , 
+                        real scalar mesorCoef , 
+                        val                   , 
+                        grad                  , 
+                        hess)
+        {   
 
-    frame copy tempset tempsub
-    frame change tempsub
+            // Designation for model.  Note the "exp", which corresponds to "log link function" in glm used
 
-    collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
+            val =   exp(
+                    sinCoef[1]:*sin(b:*2:*pi():/24) :+ cosCoef[1]:*cos(b:*2:*pi():/24)  :+ 
+                    sinCoef[2]:*sin(b:*2:*pi():/12) :+ cosCoef[2]:*cos(b:*2:*pi():/12)  :+
+                    sinCoef[3]:*sin(b:*2:*pi():/8)  :+ cosCoef[3]:*cos(b:*2:*pi():/8)   :+
+                    mesorCoef
+                    )
+        }
+    end
 
-    frame change tempset
-    frlink m:1 ID, frame(tempsub)
-    frget *, from(tempsub)
-    frame drop tempsub
+    ****************************************************************************
+    ** Define function to find hour of global maximum of fitted cosinor model **
+    ****************************************************************************
 
-    gen upperOutlier = cond((paee_hour - p75) / (iqr) >=  2 ,1,0)
-    gen lowerOutlier = cond((paee_hour - p25) / (iqr) <= -2 ,1,0)
-    
-    drop if upperOutlier == 1 | lowerOutlier == 1
-    drop upperOutlier lowerOutlier tempsub p25 p75 iqr
+    cap mata: mata drop estimateMaxHour()
+    mata:
+        void estimateMaxHour(real vector sinCoef    , 
+                            real vector cosCoef    , 
+                            real scalar mesorCoef)
+        {
 
-    frame copy tempset tempsub
-    frame change tempsub
+            transmorphic S
+            vector bh, maxInd, maxCount, maxHour_hat, maxHour_se, maxValue_hat
+            scalar i
 
-    collapse (count) notout=paee_hour, by(ID)
+            maxHour_hat  = J(1,0,.)
+            maxHour_se   = J(1,0,.) 
+            maxValue_hat = J(1,0,.)
 
-    frame change tempset
-    frlink m:1 ID, frame(tempsub)
-    frget *, from(tempsub)
-    frame drop tempsub
+            // Run optimisation loop, using different initial guess for hour (i) each time
 
-    drop if notout <20
-    drop notout tempsub
+            for (i=0; i<=23; i++){
+
+                S  = optimize_init()
+                optimize_init_argument(S, 1, sinCoef)
+                optimize_init_argument(S, 2, cosCoef)
+                optimize_init_argument(S, 3, mesorCoef)
+                optimize_init_evaluator(S, &cosinorModel())
+                optimize_init_params(S, J(1,1,i))
+                bh = optimize(S)
+
+                // Only keep results that are within 0 to 24 hours
+                
+                if (optimize_result_params(S):>=0 :& optimize_result_params(S):<=24){
+                    maxHour_hat = maxHour_hat, optimize_result_params(S)
+                    maxHour_se  = maxHour_se, sqrt(diagonal(optimize_result_V(S)))'
+                    maxValue_hat = maxValue_hat, optimize_result_value(S)
+                }
+            }
+
+            // Output max hour hat and se
+
+            maxindex(maxValue_hat,2,maxInd,maxCount)
+            st_local("maxHour_hat" , strofreal(maxHour_hat[maxInd[1]]))
+            st_local("maxHour_se"  , strofreal(maxHour_se[maxInd[1]]))
+
+        }
+    end
+
+    qui{
+
+        ******************************************************
+        ** Initialise dataset + outcome modelling variables **
+        ******************************************************
+        
+        keep ID paee_hour*
+        reshape long paee_hour, i(ID) j(hour)
+        drop if paee_hour == .
+
+        // Generate sin and cos axis variables for 24, 12, and 8 hour periods
+
+        gen sin24 = sin(hour*2*_pi/24)
+        gen cos24 = cos(hour*2*_pi/24)
+
+        gen sin12 = sin(hour*2*_pi/12)
+        gen cos12 = cos(hour*2*_pi/12)
+
+        gen sin8 = sin(hour*2*_pi/8)
+        gen cos8 = cos(hour*2*_pi/8)
+
+        ***************************************
+        ** Perform IQR outlier analysis loop **
+        ***************************************
+
+        frame copy tempset tempsub
+        frame change tempsub
+
+        // Collapse data set on percentiles, then exclude values that are + or - 2 IQR
+
+        collapse (p25) p25=paee_hour (p75) p75=paee_hour (iqr) iqr=paee_hour, by(ID)
+
+        frame change tempset
+        frlink m:1 ID, frame(tempsub)
+        frget *, from(tempsub)
+        frame drop tempsub
+
+        gen upperOutlier = cond((paee_hour - p75) / (iqr) >=  2 ,1,0)
+        gen lowerOutlier = cond((paee_hour - p25) / (iqr) <= -2 ,1,0)
+        
+        drop if upperOutlier == 1 | lowerOutlier == 1
+        drop upperOutlier lowerOutlier tempsub p25 p75 iqr
+
+        // Drop those with more than 4 data points excluded by IQR outlier analysis
+
+        frame copy tempset tempsub
+        frame change tempsub
+
+        collapse (count) notout=paee_hour, by(ID)
+
+        frame change tempset
+        frlink m:1 ID, frame(tempsub)
+        frget *, from(tempsub)
+        frame drop tempsub
+
+        drop if notout <20
+        drop notout tempsub
+
+    }
 
     ******************************
     ** Begin main analysis loop **
     ******************************
-
+    
     qui levelsof ID, local(IDList)
     qui foreach curID of local IDList{
 
         noisi di "Cosinor modelling: `curID'"
 
-        ***********************************************************
-        ** Restrict sample to current ID and initialize postlist **
-        ***********************************************************
+        ***********************************
+        ** Restrict sample to current ID **
+        ***********************************
 
         frame put * if ID == "`curID'", into(tempsub)
         frame change tempsub
 
-        local postlist ("`curID'")
-        
-        ************************************************************************************************
-        ** Apply cosinor GLM model, using log-link function to ensure paee values are always positive **
-        ************************************************************************************************
+        *****************************************************************
+        ** Apply cosinor GLM model, using gamma with log-link function **
+        *****************************************************************
 
-        glm paee_hour sin24 cos24, family(gaussian) link(log)
-        estimates store m1
+        glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8, family(gamma) link(log)
 
-        *******************************************************
-        ** Estimate real-values for sin and cos coefficients **
-        *******************************************************
+        // If model converges, continue.
 
-        margin, dydx(sin24 cos24) post
+        if e(converged)==1{
 
-        local sin24_hat       = _b[sin24]                                         
-        local sin24_se        = _se[sin24]                                        
-        local sin24_lb        = _b[sin24] + invnormal(0.025)*_se[sin24]           
-        local sin24_ub        = _b[sin24] + invnormal(0.975)*_se[sin24]           
-        local sin24_p         = 2*normal(-abs(_b[sin24]/_se[sin24]))
+            estimates store m1
+            
+            local postlist ("`curID'") 
 
-        local postlist `postlist' (`sin24_hat') (`sin24_se') (`sin24_lb') (`sin24_ub') (`sin24_p')              
+            **********************************
+            ** Get sin and cos coefficients **
+            **********************************
 
-        local cos24_hat       = _b[cos24]                                         
-        local cos24_se        = _se[cos24]                                        
-        local cos24_lb        = _b[cos24] + invnormal(0.025)*_se[cos24]           
-        local cos24_ub        = _b[cos24] + invnormal(0.975)*_se[cos24]           
-        local cos24_p         = 2*normal(-abs(_b[cos24]/_se[cos24]))              
+            // Get "midline-estimating statistic of rhythm" (i.e. mesor) value, which is just the constant of the model
 
-        local postlist `postlist' (`cos24_hat') (`cos24_se') (`cos24_lb') (`cos24_ub') (`cos24_p') 
+            local mesor_hat = _b[_cons]                                         
+            local mesor_se  = _se[_cons]                                        
+            local mesor_lb  = _b[_cons] + invnormal(0.025)*_se[_cons]           
+            local mesor_ub  = _b[_cons] + invnormal(0.975)*_se[_cons]           
+            local mesor_p   = 2*normal(-abs(_b[_cons]/_se[_cons]))
 
-        ************************
-        ** Estimate acrophase **
-        ************************
+            local postlist `postlist' (`mesor_hat') (`mesor_se') (`mesor_lb') (`mesor_ub') (`mesor_p')
 
-        nlcom cond(_b[sin24]<0,24,0)+atan2(_b[sin24],_b[cos24])*24/(2*_pi) 
-        
-        local acrophase_hat   = r(b)[1,1]                                         
-        local acrophase_se    = sqrt(r(V)[1,1])                                   
-        local acrophase_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-        local acrophase_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-        local acrophase_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+            foreach curAxis in sin cos{
 
-        local postlist `postlist' (`acrophase_hat') (`acrophase_se') (`acrophase_lb') (`acrophase_ub') (`acrophase_p')         
+                foreach i in 24 12 8{
+                    
+                    local `curAxis'`i'_hat  = .                                       
+                    local `curAxis'`i'_se   = .                                    
+                    local `curAxis'`i'_lb   = .          
+                    local `curAxis'`i'_ub   = .          
+                    local `curAxis'`i'_p    = .
 
-        *************************************************************************************************************
-        ** Get predicted values at max and min hour (at 25 and 26), as well as hours 1 through 24 (at 1 through 24) **
-        *************************************************************************************************************
+                    capture di _b[`curAxis'`i']
 
-        estimates restore m1
+                    // Get coefficients for each cosinor submodel
 
-        #delimit ;
-        margin, at(sin24=(`=sin(1*2*_pi/24)')   cos24=(`=cos(1*2*_pi/24)'))           
-                at(sin24=(`=sin(2*2*_pi/24)')   cos24=(`=cos(2*2*_pi/24)'))           
-                at(sin24=(`=sin(3*2*_pi/24)')   cos24=(`=cos(3*2*_pi/24)'))         
-                at(sin24=(`=sin(4*2*_pi/24)')   cos24=(`=cos(4*2*_pi/24)'))
+                    if _rc == 0{
 
-                at(sin24=(`=sin(5*2*_pi/24)')   cos24=(`=cos(5*2*_pi/24)'))            
-                at(sin24=(`=sin(6*2*_pi/24)')   cos24=(`=cos(6*2*_pi/24)'))            
-                at(sin24=(`=sin(7*2*_pi/24)')   cos24=(`=cos(7*2*_pi/24)'))            
-                at(sin24=(`=sin(8*2*_pi/24)')   cos24=(`=cos(8*2*_pi/24)'))
+                        local `curAxis'`i'_hat  = _b[`curAxis'`i']                                         
+                        local `curAxis'`i'_se   = _se[`curAxis'`i']                                        
+                        local `curAxis'`i'_lb   = _b[`curAxis'`i'] + invnormal(0.025)*_se[`curAxis'`i']           
+                        local `curAxis'`i'_ub   = _b[`curAxis'`i'] + invnormal(0.975)*_se[`curAxis'`i']           
+                        local `curAxis'`i'_p    = 2*normal(-abs(_b[`curAxis'`i']/_se[`curAxis'`i']))
+                    }
 
-                at(sin24=(`=sin(9*2*_pi/24)')   cos24=(`=cos(9*2*_pi/24)'))             
-                at(sin24=(`=sin(10*2*_pi/24)')  cos24=(`=cos(10*2*_pi/24)'))          
-                at(sin24=(`=sin(11*2*_pi/24)')  cos24=(`=cos(11*2*_pi/24)'))            
-                at(sin24=(`=sin(12*2*_pi/24)')  cos24=(`=cos(12*2*_pi/24)'))
+                    local postlist `postlist' (``curAxis'`i'_hat') (``curAxis'`i'_se') (``curAxis'`i'_lb') (``curAxis'`i'_ub') (``curAxis'`i'_p')
+                }
+            }
 
-                at(sin24=(`=sin(13*2*_pi/24)')  cos24=(`=cos(13*2*_pi/24)'))          
-                at(sin24=(`=sin(14*2*_pi/24)')  cos24=(`=cos(14*2*_pi/24)'))            
-                at(sin24=(`=sin(15*2*_pi/24)')  cos24=(`=cos(15*2*_pi/24)'))            
-                at(sin24=(`=sin(16*2*_pi/24)')  cos24=(`=cos(16*2*_pi/24)'))
+            *************************
+            ** Estimate acrophases **
+            *************************
 
-                at(sin24=(`=sin(17*2*_pi/24)')  cos24=(`=cos(17*2*_pi/24)'))            
-                at(sin24=(`=sin(18*2*_pi/24)')  cos24=(`=cos(18*2*_pi/24)'))           
-                at(sin24=(`=sin(19*2*_pi/24)')  cos24=(`=cos(19*2*_pi/24)'))           
-                at(sin24=(`=sin(20*2*_pi/24)')  cos24=(`=cos(20*2*_pi/24)'))
-                            
-                at(sin24=(`=sin(21*2*_pi/24)')  cos24=(`=cos(21*2*_pi/24)'))           
-                at(sin24=(`=sin(22*2*_pi/24)')  cos24=(`=cos(22*2*_pi/24)'))           
-                at(sin24=(`=sin(23*2*_pi/24)')  cos24=(`=cos(23*2*_pi/24)'))            
-                at(sin24=(`=sin(24*2*_pi/24)')  cos24=(`=cos(24*2*_pi/24)'))  
+            foreach i in 24 12 8{
+                
+                local acrophase`i'_hat   = .                                       
+                local acrophase`i'_se    = .                            
+                local acrophase`i'_lb    = .     
+                local acrophase`i'_ub    = . 
+                local acrophase`i'_p     = .
 
-                at(sin24=(`=sin(`acrophase_hat'*2*_pi/24)')     cos24=(`=cos(`acrophase_hat'*2*_pi/24)'))    
-                at(sin24=(`=sin(`acrophase_hat'*2*_pi/24-_pi)') cos24=(`=cos(`acrophase_hat'*2*_pi/24-_pi)')) 
-                post
-                ;
-        #delimit cr
+                // For acrophase computation, reference quadrant is changed depending on + or - for sin beta
 
-        ************************
-        ** Estimate max value **
-        ************************
+                capture nlcom cond(_b[sin`i']<0,`i',0) + atan2(_b[sin`i'],_b[cos`i'])*`i'/(2*_pi) 
 
-        nlcom  _b[25._at]
+                if _rc == 0{
 
-        local max_hat         = r(b)[1,1]                                         
-        local max_se          = sqrt(r(V)[1,1])                                   
-        local max_lb          = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-        local max_ub          = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-        local max_p           = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
+                    local acrophase`i'_hat   = r(b)[1,1]                                         
+                    local acrophase`i'_se    = sqrt(r(V)[1,1])                                   
+                    local acrophase`i'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local acrophase`i'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local acrophase`i'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
 
-        local postlist `postlist' (`max_hat') (`max_se') (`max_lb') (`max_ub') (`max_p')        
+                }
 
-        ************************
-        ** Estimate min value **
-        ************************
+                local postlist `postlist' (`acrophase`i'_hat') (`acrophase`i'_se') (`acrophase`i'_lb') (`acrophase`i'_ub') (`acrophase`i'_p') 
+                
+            }
 
-        nlcom  _b[26._at]
+            *************************
+            ** Estimate amplitudes **
+            *************************
 
-        local min_hat         = r(b)[1,1]                                         
-        local min_se          = sqrt(r(V)[1,1])                                   
-        local min_lb          = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-        local min_ub          = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-        local min_p           = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
+            foreach i in 24 12 8{
+                
+                local amplitude`i'_hat   = .                                       
+                local amplitude`i'_se    = .
+                local amplitude`i'_lb    = .     
+                local amplitude`i'_ub    = .     
+                local amplitude`i'_p     = .  
 
-        local postlist `postlist' (`min_hat') (`min_se') (`min_lb') (`min_ub') (`min_p')        
+                capture nlcom sqrt(_b[sin`i']^2+_b[cos`i']^2)
 
-        ************************
-        ** Estimate amplitude **
-        ************************
+                if _rc == 0{
 
-        nlcom (_b[25._at]-_b[26._at])/2
+                    local amplitude`i'_hat   = r(b)[1,1]                                       
+                    local amplitude`i'_se    = sqrt(r(V)[1,1])                                   
+                    local amplitude`i'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local amplitude`i'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local amplitude`i'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
 
-        local amplitude_hat   = r(b)[1,1]                                         
-        local amplitude_se    = sqrt(r(V)[1,1])                                   
-        local amplitude_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-        local amplitude_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-        local amplitude_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                }
 
-        local postlist `postlist' (`amplitude_hat') (`amplitude_se') (`amplitude_lb') (`amplitude_ub') (`amplitude_p')       
+                local postlist `postlist' (`amplitude`i'_hat') (`amplitude`i'_se') (`amplitude`i'_lb') (`amplitude`i'_ub') (`amplitude`i'_p')          
+            }
+            
+            ***************************************************
+            ** Estimate max attained value, the hour it occurrs
+            ***************************************************
 
-        *************************
-        ** Estimate total paee **
-        *************************
+            local maxHour_hat   = .                                      
+            local maxHour_se    = .                                   
+            local maxHour_lb    = .    
+            local maxHour_ub    = .     
+            local maxHour_p     = .
 
-        nlcom   _b[1._at]+_b[2._at]+_b[3._at]       +   ///
-                _b[4._at]+_b[5._at]+_b[6._at]       +   ///
-                _b[7._at]+_b[8._at]+_b[9._at]       +   ///
-                _b[10._at]+_b[11._at]+_b[12._at]    +   ///
-                _b[13._at]+_b[14._at]+_b[15._at]    +   ///
-                _b[16._at]+_b[17._at]+_b[18._at]    +   ///
-                _b[19._at]+_b[20._at]+_b[21._at]    +   ///
-                _b[22._at]+_b[23._at]+_b[24._at]        
+            local maxValue_hat   = .                                     
+            local maxValue_se    = .                                  
+            local maxValue_lb    = .     
+            local maxValue_ub    = .   
+            local maxValue_p     = .
 
-        local paeet_hat       = r(b)[1,1]                                         
-        local paeet_se        = sqrt(r(V)[1,1])                                   
-        local paeet_lb        = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-        local paeet_ub        = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-        local paeet_p         = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+            // Populate matrices with model coeffients to send into mata
 
-        local postlist `postlist' (`paeet_hat') (`paeet_se') (`paeet_lb') (`paeet_ub') (`paeet_p')        
+            mat sinCoef     = `sin24_hat' , `sin12_hat' , `sin8_hat' 
+            mat cosCoef     = `cos24_hat' , `cos12_hat' , `cos8_hat'
+            mat mesorCoef   = `mesor_hat'
 
-        ***********************
-        ** Estimate q factor **
-        ***********************
+            // Run mata code to do multi-start optimization of hour where max value occurs in cosinor model
 
-        nlcom   2*_pi*(_b[25._at]-_b[26._at])           ///
-                /                                       ///
-                (                                       ///
-                _b[1._at]+_b[2._at]+_b[3._at]       +   ///
-                _b[4._at]+_b[5._at]+_b[6._at]       +   ///
-                _b[7._at]+_b[8._at]+_b[9._at]       +   ///
-                _b[10._at]+_b[11._at]+_b[12._at]    +   ///
-                _b[13._at]+_b[14._at]+_b[15._at]    +   ///
-                _b[16._at]+_b[17._at]+_b[18._at]    +   ///
-                _b[19._at]+_b[20._at]+_b[21._at]    +   ///
-                _b[22._at]+_b[23._at]+_b[24._at]    -   ///
-                (24*_b[26._at])                         ///
-                )
+            qui mata: estimateMaxHour(st_matrix("sinCoef"), st_matrix("cosCoef"), st_matrix("mesorCoef"))
+            
+            if `maxHour_hat' != .{
 
-        local qfactor_hat   = r(b)[1,1]                                           
-        local qfactor_se    = sqrt(r(V)[1,1])                                      
-        local qfactor_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])         
-        local qfactor_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])         
-        local qfactor_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                local maxHour_hat   = `maxHour_hat'                                        
+                local maxHour_se    = `maxHour_se'                                    
+                local maxHour_lb    = `maxHour_hat' + invnormal(0.025)*sqrt(`maxHour_se' )      
+                local maxHour_ub    = `maxHour_hat' + invnormal(0.975)*sqrt(`maxHour_se' )      
+                local maxHour_p     = 2*normal(-abs(`maxHour_hat'/sqrt(`maxHour_se')))
 
-        local postlist `postlist' (`qfactor_hat') (`qfactor_se') (`qfactor_lb') (`qfactor_ub') (`qfactor_p')
-        
-        ******************
-        ** Post results **
-        ******************
+                // Initialize "at statement" for marginal hour value where global max occurs
 
-        post cosinorpost `postlist'
+                foreach i in 24 12 8{
+                    
+                    local per`i' sin`i'=(`=sin(`maxHour_hat'*2*_pi/`i')')cos`i'=(`=cos(`maxHour_hat'*2*_pi/`i')')
+
+                }
+
+                // Compute marginal value at hour where global max occurs
+
+                capture margin, at(`per24'`per12'`per8') post
+
+                if _rc == 0{
+
+                    local maxValue_hat   = r(b)[1,1]                                         
+                    local maxValue_se    = sqrt(r(V)[1,1])                                   
+                    local maxValue_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local maxValue_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local maxValue_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+
+                }
+  
+            }
+
+            local postlist `postlist' (`maxHour_hat')  (`maxHour_se')  (`maxHour_lb')  (`maxHour_ub')  (`maxHour_p')  
+            local postlist `postlist' (`maxValue_hat') (`maxValue_se') (`maxValue_lb') (`maxValue_ub') (`maxValue_p')  
+
+            *************************
+            ** Estimate total PAEE **
+            *************************
+
+            local totalPAEE_hat   = .                                      
+            local totalPAEE_se    = .                                   
+            local totalPAEE_lb    = .    
+            local totalPAEE_ub    = .     
+            local totalPAEE_p     = .
+
+            // Initilize at margin list as each hour of the day, across each cosinor submodel
+
+            local marginList
+            forvalues h = 0(1)23{
+                foreach i in 24 12 8{
+                    local per`i' sin`i'=(`=sin(`h'*2*_pi/`i')')cos`i'=(`=cos(`h'*2*_pi/`i')')
+                }
+                local marginList `marginList' at(`per24'`per12'`per8')
+            }
+
+            // Get marginal values
+
+            estimates restore m1
+            capture margin, `marginList' post
+
+            if _rc == 0{
+                
+                // Compute sum of marginal values at each hour to compute total PAEE
+
+                capture nlcom   _b[1._at]  + _b[2._at]  + _b[3._at]  + _b[4._at]  +     ///
+                                _b[5._at]  + _b[6._at]  + _b[7._at]  + _b[8._at]  +     ///
+                                _b[9._at]  + _b[10._at] + _b[11._at] + _b[12._at] +     ///
+                                _b[13._at] + _b[14._at] + _b[15._at] + _b[16._at] +     ///
+                                _b[17._at] + _b[18._at] + _b[19._at] + _b[20._at] +     ///
+                                _b[21._at] + _b[22._at] + _b[23._at] + _b[24._at]
+                
+                if _rc == 0{
+
+                    local totalPAEE_hat   = r(b)[1,1]                                       
+                    local totalPAEE_se    = sqrt(r(V)[1,1])                                   
+                    local totalPAEE_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local totalPAEE_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local totalPAEE_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                }
+
+            }
+
+            local postlist `postlist' (`totalPAEE_hat') (`totalPAEE_se') (`totalPAEE_lb') (`totalPAEE_ub') (`totalPAEE_p')  
+                                       
+            *********************************
+            ** Output results to post file **
+            *********************************
+
+            post cosinorpost `postlist'
+            
+        }
 
         frame change tempset
         frame drop tempsub
 
     }
-
+    
     postclose cosinorpost
     
     frame change dataset
@@ -290,63 +442,3 @@ if _rc != 0{
 }
 
 joinby ID using "`rootPath'/`cosinorEstimatesFile'"
-
-
-/*
-
-//Remove individiuals with missing hours data
-egen nmis=rmiss(paee_hour*)
-drop if nmis!=0 // n=12,278 (n=157 deleted)
-drop nmis 
-
-//Remove individuals with less than 4 days wear time in any time window 
-foreach var of varlist pwear_hour1-pwear_hour24 {
-gen low`var'=1 if `var'<=3.999999
-replace low`var'=0 if low`var'!=1
-}
-egen lowpwearT = rsum(lowpwear*)
-drop if lowpwearT!=0 // n=11,766 (n=512 deleted)	  
-drop lowpwear*
-
-//Generate total PAEE, time-block PAEE, and percentage PAEE
-egen paeeT = rsum(paee_hour*) // total
-gen paeeT100 = paeeT/100
-gen paeeTt = (paeeT*60)/1000
-
-egen early=rsum(paee_hour5-paee_hour8) // time-block 
-egen earlymid=rsum(paee_hour9-paee_hour12)
-egen mid=rsum(paee_hour13-paee_hour16)
-egen latemid=rsum(paee_hour17-paee_hour20)
-egen late=rsum(paee_hour21-paee_hour24)
-egen night=rsum(paee_hour1-paee_hour4)
-gen earlyp=(early/paeeT)*100 // time-block percentage of total
-gen earlymidp=(earlymid/paeeT)*100
-gen midp=(mid/paeeT)*100
-gen latemidp=(latemid/paeeT)*100
-gen latep=(late/paeeT)*100
-gen nightp=(night/paeeT)*100
-gen earlyp5=earlyp/5 //time-block percentage of total divided by 5
-gen earlymidp5=earlymidp/5
-gen midp5=midp/5
-gen latemidp5=latemidp/5
-gen latep5=latep/5
-gen nightp5=nightp/5
-
-//Amplitude
-gen amplitude = ((P_MORNING_adj_coefficient^2) + (P_MIDNIGHT_adj_coefficient^2))^0.5 
-gen log_rel_amplitude = ln(amplitude/paeeTt)
-
-//Acrophase
-gen acrophase_rad = atan2(P_MORNING_adj_coefficient, P_MIDNIGHT_adj_coefficient)
-drop if acrophase_rad==.
-replace acrophase_rad = acrophase_rad + 2*_pi if acrophase_rad<0
-gen sin_acro = sin(acrophase_rad)
-gen cos_acro = cos(acrophase_rad)
-gen acrophase_deg = (acrophase_rad)*57.29
-gen acrophase_hours = (acrophase_deg)/15
-sum acrophase_hours, detail
-gen acrophase = acrophase_hours
-gen acrophase_hour = (24*acrophase_rad)/(2*_pi)
-
-*/
-

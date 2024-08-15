@@ -3,26 +3,32 @@ version 17.0
 frame copy dataset tempset
 frame change tempset
 
+drop if sin24_p>0.05 & cos24_p>0.05 & sin12_p>0.05 & cos12_p>0.05 & sin8_p>0.05 & cos8_p>0.05
 drop if P_Pwear_consolidated<72
-drop if sin24_p>0.05 & cos24_p>0.05
 drop if fatMass == .
 
-drop *_se *_lb *_ub //*_p
+drop *_se *_lb *_ub *_p
 rename *_hat *
 
-gen sinCosinorAcro = sin(acrophase*2*_pi/24)
-gen cosCosinorAcro = cos(acrophase*2*_pi/24)
-gen sinCosinorAcro12 = sin(acrophase*2*_pi/12)
-gen cosCosinorAcro12 = cos(acrophase*2*_pi/12)
-gen sinCosinorAcro8 = sin(acrophase*2*_pi/8)
-gen cosCosinorAcro8 = cos(acrophase*2*_pi/8)
-gen maxCosinorPaee = max*60/1000
-gen minCosinorPaee = min*60/1000 
+gen maxHour24_sin = sin(maxHour*2*_pi/24)
+gen maxHour24_cos = cos(maxHour*2*_pi/24)
+
+gen acrophase24_sin = sin(acrophase24*2*_pi/24)
+gen acrophase24_cos = cos(acrophase24*2*_pi/24)
+
+gen acrophase12_sin = sin(acrophase12*2*_pi/12)
+gen acrophase12_cos = cos(acrophase12*2*_pi/12)
+
+gen acrophase8_sin = sin(acrophase8*2*_pi/8)
+gen acrophase8_cos = cos(acrophase8*2*_pi/8)
+
+replace mesor = exp(mesor) * 60/1000
+replace totalPAEE = totalPAEE * 60/1000
+replace maxValue = maxValue * 60/1000
+
 
 #delimit ;
-local outcomeVars   //CCMR
-                    fatFreeMass
-                    insulin
+local outcomeVars   insulin
                     mbpsys
                     mbpdia
                     nefa
@@ -33,6 +39,7 @@ local outcomeVars   //CCMR
                     hdl
                     glucose0
                     glucose120
+                    fatFreeMass
                     ;
 
 local contCovVars   c.age
@@ -57,42 +64,53 @@ local catCovVars    i.sex
 local modelLevel1 `contCovVars' `catCovVars'
 local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 
+
 capture erase "Results/3_jointAssociations.xlsx"
 
-forvalues i = 2/2{
+qui forvalues i = 1/2{
 
     putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
     putexcel A1 = ("outcomeVar")
-    putexcel B1 = ("Pvalue: CosinorPaee block")
-    putexcel C1 = ("Pvalue: CosinorPaee#sex block")
-    putexcel D1 = ("Pvalue: CosinorAcro block")
-    putexcel E1 = ("Pvalue: CosinorAcro#sex block")
-    putexcel F1 = ("Count: Women")
-    putexcel G1 = ("Count: Men")
+    putexcel B1 = ("Pvalue: mesor")
+    putexcel C1 = ("Pvalue: mesor#sex")
+    putexcel D1 = ("Pvalue: maxValue")
+    putexcel E1 = ("Pvalue: maxValue#sex")
+    putexcel F1 = ("Pvalue: amplitude24")
+    putexcel G1 = ("Pvalue: amplitude24#sex")
+    putexcel H1 = ("Pvalue: amplitude12")
+    putexcel I1 = ("Pvalue: amplitude12#sex")
+    putexcel J1 = ("Pvalue: amplitude8")
+    putexcel K1 = ("Pvalue: amplitude8#sex")
+    putexcel L1 = ("Pvalue: maxHour24")
+    putexcel M1 = ("Pvalue: maxHour24#sex")
+    putexcel N1 = ("Pvalue: acrophase24")
+    putexcel O1 = ("Pvalue: acrophase24#sex")
+    putexcel P1 = ("Pvalue: acrophase12")
+    putexcel Q1 = ("Pvalue: acrophase12#sex")
+    putexcel R1 = ("Pvalue: acrophase8")
+    putexcel S1 = ("Pvalue: acrophase8#sex")
+    putexcel T1 = ("Count: Women")
+    putexcel U1 = ("Count: Men")
 
-    foreach curExposure in maxCosinorPaee minCosinorPaee{
+    foreach curExposure in mesor maxValue amplitude24 amplitude12 amplitude8{
 
         putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
         putexcel A1 = ("outcomeVar")
         putexcel B1 = ("Estimate: Women")
         putexcel C1 = ("Estimate: Men")
     }
-}
 
-forvalues i = 1/2{
+    foreach curExposure in maxHour24 acrophase24 acrophase12 acrophase8{
 
-    putexcel set "Results/3_jointAssociations.xlsx", sheet("CosinorAcro_m`i'") modify
-    putexcel A1 = ("outcomeVar")
-    putexcel B1 = ("Estimate: Women")
-    putexcel C1 = ("Hour at max: Women")
-    putexcel D1 = ("Hour at min: Women")
-    putexcel E1 = ("Midpoint value: Women")
-    putexcel F1 = ("Estimate: Men")
-    putexcel G1 = ("Hour at max: Men")
-    putexcel H1 = ("Hour at min: Men")
-    putexcel I1 = ("Midpoint value: Men")
+        putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+        putexcel A1 = ("outcomeVar")
+        putexcel B1 = ("Amplitude: Women")
+        putexcel C1 = ("Normalised acrophase: Women")
+        putexcel D1 = ("Amplitude: Men")
+        putexcel E1 = ("Normalised acrophase: Men")
+
+    }
 }
-   
     
 local curRow = 1
 foreach curOutcomeVar of local outcomeVars{
@@ -102,51 +120,65 @@ foreach curOutcomeVar of local outcomeVars{
     forvalues i = 1/2{
 
         #delimit ;
-        nestreg, lr: glm `curOutcomeVar' 
-                     (`modelLevel`i'') 
-                     (c.maxCosinorPaee       c.minCosinorPaee)
-                     (c.maxCosinorPaee#i.sex c.minCosinorPaee#i.sex)
+        nestreg : glm    `curOutcomeVar' 
+                            (`modelLevel`i'')
 
-                     (c.maxCosinorPaee#c.minCosinorPaee)
-                     (c.maxCosinorPaee#c.minCosinorPaee#i.sex)
+                            (c.mesor)
+                            (c.mesor#i.sex)
 
-                     (c.sinCosinorAcro       c.cosCosinorAcro)
-                     (c.sinCosinorAcro#i.sex c.cosCosinorAcro#i.sex)
+                            (c.maxValue)
+                            (c.maxValue#i.sex)
+                            
+                            (c.amplitude24)
+                            (c.amplitude24#i.sex)
 
-                     //(c.sinCosinorAcro12       c.cosCosinorAcro12)
-                     //(c.sinCosinorAcro12#i.sex c.cosCosinorAcro12#i.sex)
+                            (c.amplitude12)
+                            (c.amplitude12#i.sex)
 
-                     //(c.sinCosinorAcro8       c.cosCosinorAcro8)
-                     //(c.sinCosinorAcro8#i.sex c.cosCosinorAcro8#i.sex)
-                     ,
-                     family(gaussian)
-                     link(`=cond("`curOutcomeVar'"=="CCMR","identity","log")')
-                     ;
+                            (c.amplitude8)
+                            (c.amplitude8#i.sex)
+
+                            (c.maxHour24_sin        c.maxHour24_cos)
+                            (c.maxHour24_sin#i.sex  c.maxHour24_cos#i.sex)
+
+                            (c.acrophase24_sin        c.acrophase24_cos)
+                            (c.acrophase24_sin#i.sex  c.acrophase24_cos#i.sex)
+
+                            (c.acrophase12_sin        c.acrophase12_cos)
+                            (c.acrophase12_sin#i.sex  c.acrophase12_cos#i.sex)
+
+                            (c.acrophase8_sin          c.acrophase8_cos)
+                            (c.acrophase8_sin#i.sex    c.acrophase8_cos#i.sex)                      
+                            ,
+                            family(gaussian)
+                            link(log)
+                            ;
         #delimit cr
-     asdf
+        
         estimates store fullModel
-
+        
         putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
         putexcel A`curRow' = ("`curOutcomeVar'")
-        putexcel B`curRow' = (r(wald)[2,3])
-        putexcel C`curRow' = (r(wald)[3,3])
-        putexcel D`curRow' = (r(wald)[4,3])
-        putexcel E`curRow' = (r(wald)[5,3])
 
+        forvalues j = 1/18{
+            local curCol = char(65+`j')
+            putexcel `curCol'`curRow' = (r(wald)[`=`j'+1',3])
+
+        }
         count if e(sample) == 1 & sex == 0
-        putexcel F`curRow' = ("`r(N)'")
+        putexcel T`curRow' = ("`r(N)'")
 
         count if e(sample) == 1 & sex == 1
-        putexcel G`curRow' = ("`r(N)'")
+        putexcel U`curRow' = ("`r(N)'")
+
         
-        foreach curExposure in maxCosinorPaee minCosinorPaee{
+        foreach curExposure in mesor maxValue amplitude24 amplitude12 amplitude8{
 
             putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
             putexcel A`curRow' = ("`curOutcomeVar'")
             
             estimates restore fullModel
-            if "`curOutcomeVar'" == "CCMR"  margins, over(sex) dydx(`curExposure') asobserved post
-            else                            margins, over(sex) eydx(`curExposure') asobserved post
+            margins, over(sex) eydx(`curExposure') asobserved post
 
             forvalues curSex = 0/1{
                 
@@ -170,57 +202,92 @@ foreach curOutcomeVar of local outcomeVars{
                 putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
             }       
         }
-        
-        putexcel set "Results/3_jointAssociations.xlsx", sheet("CosinorAcro_m`i'") modify
-        putexcel A`curRow' = ("`curOutcomeVar'")
 
-        forvalues curSex = 0/1{
+        foreach curExposure in maxHour24 acrophase24 acrophase12 acrophase8{
+
+            putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+            putexcel A`curRow' = ("`curOutcomeVar'")
 
             estimates restore fullModel
+            margins, over(sex) eydx(`curExposure'_sin `curExposure'_cos) asobserved post
 
-            if "`curOutcomeVar'" == "CCMR"  margins if sex == `curSex', dydx(sinCosinorAcro cosCosinorAcro) asobserved post
-            else                            margins if sex == `curSex', eydx(sinCosinorAcro cosCosinorAcro) asobserved post
+            forvalues curSex = 0/1{
 
-            nlcom sqrt((_b[sinCosinorAcro])^2+(_b[cosCosinorAcro])^2)
+                nlcom sqrt((_b[`curExposure'_sin:`curSex'.sex])^2+(_b[`curExposure'_cos:`curSex'.sex])^2)
 
-            local curEstimate   = r(b)[1,1]
-            local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
-            local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
-            local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
+                local curEstimate   = r(b)[1,1]
+                local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
+                local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
+                local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
 
-            local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
-                                    " ("                                            +   ///
-                                    `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
-                                    ", "                                            +   ///
-                                    `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
-                                    ")"
+                local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
+                                        " ("                                            +   ///
+                                        `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
+                                        ", "                                            +   ///
+                                        `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
+                                        ")"
 
-            local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
+                local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
 
-            local curCol = char(66+4*`curSex')
-            putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
+                local curCol = char(66+2*`curSex')
+                putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
 
-            nlcom cond(_b[sinCosinorAcro]<0,24,0)+atan2(_b[sinCosinorAcro], _b[cosCosinorAcro])*24/(2*_pi)
-            local acroMax = r(b)[1,1]
-            local curCol = char(67+4*`curSex')
-            putexcel `curCol'`curRow' = (`"`=trim("`: display %10.2f `acroMax''")'"')
 
-            nlcom cond(_b[sinCosinorAcro]<0,12,12)+atan2(_b[sinCosinorAcro], _b[cosCosinorAcro])*24/(2*_pi)
-            local acroMin = r(b)[1,1]
-            local curCol = char(68+4*`curSex')
-            putexcel `curCol'`curRow' = (`"`=trim("`: display %10.2f `acroMin''")'"')
+                nlcom cond(_b[`curExposure'_sin:`curSex'.sex]<0,1,0)+atan2(_b[`curExposure'_sin:`curSex'.sex], _b[`curExposure'_cos:`curSex'.sex])*1/(2*_pi)
 
-            nlcom cond(_b[sinCosinorAcro]<0,18,6)+atan2(_b[sinCosinorAcro], _b[cosCosinorAcro])*24/(2*_pi)
-            local acroMid = r(b)[1,1]
+                local curEstimate   = r(b)[1,1]
+                local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
+                local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
+                local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
+
+                local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
+                                        " ("                                            +   ///
+                                        `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
+                                        ", "                                            +   ///
+                                        `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
+                                        ")"
+
+                local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
+
+                local curCol = char(67+2*`curSex')
+                putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
+
+
+            }
+        }
+
+
+        gen hat = .
+        gen lb = .
+        gen ub = .
+
+        local marginsList
+        foreach curExposure in maxHour24 acrophase24 acrophase12 acrophase8{
+
+            forvalues j = 1/64{
+                
+                local marginsList `marginsList' at(`curExposure'_sin=(`=sin(`j'*2*_pi/64)')`curExposure'_cos=(`=cos(`j'*2*_pi/64)'))
+
+            }
+
+            forvalues curSex = 0/1{
+
+                estimates restore fullModel
+                margins if sex==`curSex', at()  `marginsList' asobserved post
+
+                forvalues j = 1/64{
+
+                    nlcom (_b[`=`j'+1'._at]-_b[1._at])/_b[1._at]
+                    replace hat = r(b)[1,1]                                     in `j'
+                    replace lb  = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  in `j'
+                    replace ub  = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])  in `j'
+
+                }
+                gen obs = _n/64
+                line hat obs in 1/64 || line lb obs in 1/64 || line ub obs in 1/64
+                asdf
+            }
             
-            estimates restore fullModel
-            margins if sex == `curSex', at(sinCosinorAcro=`=sin(`acroMid'*2*_pi/24)' cosCosinorAcro=(`=cos(`acroMid'*2*_pi/24)')) asobserved post
-
-            nlcom _b[_cons]
-            local midPoint = r(b)[1,1]
-            local curCol = char(69+4*`curSex')
-            putexcel `curCol'`curRow' = (`"`=trim("`: display %10.2f `midPoint''")'"')
-         
         }
     }
 }
