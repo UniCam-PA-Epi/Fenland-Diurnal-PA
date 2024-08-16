@@ -41,18 +41,18 @@ replace maxValue    = maxValue   * 60/1000
 ****************************************************************************************
 
 #delimit ;
-local outcomeVars   mbpsys
-                    mbpdia
+local outcomeVars   glucose0
+                    glucose120
+                    insulin
                     nefa
                     leptin
                     adiponectin
-                    crp
                     ldl
                     hdl
-                    glucose0
-                    glucose120
-                    insulin
                     fatFreeMass
+                    mbpsys
+                    mbpdia
+                    crp
                     ;
 
 local contCovVars   c.age
@@ -142,7 +142,12 @@ foreach curOutcomeVar of local outcomeVars{
         ** Apply nested GLM gaussian linear model with log link **
         **********************************************************
 
+        // Note that when "crp" is the outcome var, we apply an inverse-Gaussian GLM due to the extreme right tail.
+        // This choice helps resolve convergence issues that may arise when using a Gaussian GLM for "crp".
+        // This choice was verified using BIC for all outcome vars.
+
         #delimit ;
+        
         nestreg : glm   `curOutcomeVar' 
                         (`modelLevel`i'')
 
@@ -167,7 +172,7 @@ foreach curOutcomeVar of local outcomeVars{
                         (c.acrophase8_sin          c.acrophase8_cos)
                         (c.acrophase8_sin#i.sex    c.acrophase8_cos#i.sex)                      
                         ,
-                        family(gaussian)
+                        family(`=cond("`curOutcomeVar'"=="crp","igaussian","gaussian")')
                         link(log)
                         ;
         #delimit cr
@@ -294,7 +299,7 @@ foreach curOutcomeVar of local outcomeVars{
         ** Construct acrophase time-response curves **
         **********************************************
 
-        qui foreach curExposure in acrophase24 acrophase12 acrophase8{
+        foreach curExposure in acrophase24 acrophase12 acrophase8{
             
             // Get p-values for the statistical significance of acrophase time-response curves for each sex
             // This is determined from the signficance of the derived amplitude feature of the cosinor model
@@ -315,9 +320,9 @@ foreach curOutcomeVar of local outcomeVars{
 
             // Initialise marginal value points. 64 points resolution produces good looking plots, so going with that.
             
-            local plotResolution = 64
+            local plotResolution = 32
             local marginsList
-            forvalues j = 1/`plotResolution'{
+            forvalues j = 0/`plotResolution'{
                 
                 local marginsList `marginsList' at(`curExposure'_sin=(`=sin(`j'*2*_pi/`plotResolution')')`curExposure'_cos=(`=cos(`j'*2*_pi/`plotResolution')'))
 
@@ -333,12 +338,12 @@ foreach curOutcomeVar of local outcomeVars{
                 gen ub = .
 
                 estimates restore fullModel
-                margins if sex==`curSex', at()  `marginsList' asobserved post
-
+                margins if sex==`curSex', at() `marginsList' asobserved post
+                
                 // Compute relative difference between each point estimate (i.e. currentValue) and the overall mean (i.e. referenceValue):
                 // (currentValue - referenceValue)/referenceValue
 
-                forvalues j = 1/`plotResolution'{
+                forvalues j = 1/`=1+`plotResolution''{
 
                     nlcom (_b[`=`j'+1'._at]-_b[1._at])/_b[1._at]
                     replace hat = r(b)[1,1]                                     in `j'
@@ -353,12 +358,12 @@ foreach curOutcomeVar of local outcomeVars{
                 if regexm("`curExposure'","12") == 1 local curTime = 12 
                 if regexm("`curExposure'","8")  == 1 local curTime = 8
                             
-                gen timePLot = `curTime'*_n/`plotResolution' if hat !=.
+                gen timePLot = `curTime'*(_n-1)/`plotResolution' if hat !=.
                 local timeLab 0 `=1*`curTime'/4' `=2*`curTime'/4' `=3*`curTime'/4' `curTime'
 
                 // Plot acrophase-response curve based on all values computed above
 
-                set graphics off
+                set graphics on
 
                 #delimit ;
                 twoway  (
@@ -388,14 +393,15 @@ foreach curOutcomeVar of local outcomeVars{
                         name("`curOutcomeVar'_`curExposure'_s`curSex'_m`i'", replace)
 
                         note("`Pvalue_s`curSex''", ring(0) position(1))
-
 					    legend(off)                       
                         )
                         ;                      
                 #delimit cr
 
+                capture mkdir Plots
                 graph save "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'" "Plots/`curOutcomeVar'_`curExposure'_s`curSex'_m`i'.gph", replace
-                
+                graph close "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'"
+
                 drop hat lb ub timePLot
                 
             }       
