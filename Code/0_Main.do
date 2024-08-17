@@ -1,6 +1,7 @@
 version 17.0
 
 clear
+estimates clear
 set more off
 set seed 1234
 

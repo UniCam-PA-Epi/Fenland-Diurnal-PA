@@ -25,6 +25,7 @@ local contVars  age
                 mbpdia
                 mbpsys
                 glucose0
+                glucose120
                 ;
 
 local catVars   ethnic
