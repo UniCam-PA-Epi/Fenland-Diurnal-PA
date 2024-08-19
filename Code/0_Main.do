@@ -5,9 +5,16 @@ estimates clear
 set more off
 set seed 1234
 
-args rootPath fenlandReleaseFile cosinorEstimatesFile
+args rootPath
 
-do Code/1_initialiseDataset.do "`rootPath'" "`fenlandReleaseFile'" "`cosinorEstimatesFile'"
-do Code/2_descriptivesTables.do 
-do Code/3_jointAssociations.do  
-do Code/4_violinPlots.do        
+frames reset
+frame rename default dataset
+
+use "`rootPath'/fenlandRaw.dta"
+
+include 1_initialiseOutcomes.do
+include 2_initialiseCovariates.do
+include 3_applyCosinorModel.do
+include 4_descriptivesTables.do
+include 5_violinPlots.do
+include 6_jointAssociations.do

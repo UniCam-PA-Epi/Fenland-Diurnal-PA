@@ -11,9 +11,6 @@ frame change tempset
 
 #delimit ;
 local contVars  age
-                diet
-                alcohol
-                paeeTt
                 fatMass
                 fatFreeMass
                 insulin
@@ -28,7 +25,8 @@ local contVars  age
                 glucose120
                 ;
 
-local catVars   ethnic
+local catVars   alcohol
+                ethnic
                 education
                 income
                 smoke

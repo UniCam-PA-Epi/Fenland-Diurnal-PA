@@ -56,11 +56,11 @@ local outcomeVars   glucose0
                     ;
 
 local contCovVars   c.age
-                    c.diet 
-                    c.alcohol
                     ;
 
 local catCovVars    i.sex
+                    i.diet 
+                    i.alcohol
                     i.ethnic
                     i.education
                     i.income
@@ -83,6 +83,7 @@ local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 ** Initialise excel spreadsheet **
 **********************************
 
+capture mkdir Results
 capture erase "Results/3_jointAssociations.xlsx"
 
 qui forvalues i = 1/2{
@@ -178,7 +179,7 @@ foreach curOutcomeVar of local outcomeVars{
         #delimit cr
         
         estimates store fullModel
-
+        asdf
         // Store results of nested Wald tests for the contribution of each block to the model
         
         putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
@@ -407,7 +408,6 @@ foreach curOutcomeVar of local outcomeVars{
             }       
         }
     }
-
 }
 
 frame change dataset
