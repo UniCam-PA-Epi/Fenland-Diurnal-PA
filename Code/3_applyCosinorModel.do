@@ -13,9 +13,88 @@ version 17.0
 **  Uses a multi-start optimization approach to estimate the hour of maximum PAEE.
 **  Total PAEE is estimated as the average of marginal values computed at each hour within 24-hours.
 
-args rootPath cosinorEstimatesFile
 
-capture confirm file "`rootPath'/`cosinorEstimatesFile'"
+****************************************************************
+** Define cosinor model specification for max hour estimation **
+****************************************************************
+
+cap mata: mata drop cosinorModel()
+mata
+    void cosinorModel(real scalar todo      , 
+                        real vector b         , 
+                        real vector sinCoef   , 
+                        real vector cosCoef   , 
+                        real scalar mesorCoef , 
+                        val                   , 
+                        grad                  , 
+                        hess)
+    {   
+
+        // Designation for model.  Note the "exp", which corresponds to "log link function" in glm used
+
+        val =   exp(
+                sinCoef[1]:*sin(b:*2:*pi():/24) :+ cosCoef[1]:*cos(b:*2:*pi():/24)  :+ 
+                sinCoef[2]:*sin(b:*2:*pi():/12) :+ cosCoef[2]:*cos(b:*2:*pi():/12)  :+
+                sinCoef[3]:*sin(b:*2:*pi():/8)  :+ cosCoef[3]:*cos(b:*2:*pi():/8)   :+
+                mesorCoef
+                )
+    }
+end
+
+****************************************************************************
+** Define function to find hour of global maximum of fitted cosinor model **
+****************************************************************************
+
+cap mata: mata drop estimateMaxHour()
+mata
+    void estimateMaxHour(real vector sinCoef    , 
+                            real vector cosCoef     , 
+                            real scalar mesorCoef)
+    {
+
+        transmorphic S
+        vector bh, maxInd, maxCount, maxHour_hat, maxHour_se, maxValue_hat
+        scalar i
+
+        maxHour_hat  = J(1,0,.)
+        maxHour_se   = J(1,0,.) 
+        maxValue_hat = J(1,0,.)
+
+        // Run optimisation loop, using different initial guess for hour (i) each time
+
+        for (i=0; i<=23; i++){
+
+            S  = optimize_init()
+            optimize_init_argument(S, 1, sinCoef)
+            optimize_init_argument(S, 2, cosCoef)
+            optimize_init_argument(S, 3, mesorCoef)
+            optimize_init_evaluator(S, &cosinorModel())
+            optimize_init_params(S, J(1,1,i))
+            bh = optimize(S)
+
+            // Only keep results that are within 0 to 24 hours
+            
+            if (optimize_result_params(S):>=0 :& optimize_result_params(S):<=24){
+                maxHour_hat = maxHour_hat, optimize_result_params(S)
+                maxHour_se  = maxHour_se, sqrt(diagonal(optimize_result_V(S)))'
+                maxValue_hat = maxValue_hat, optimize_result_value(S)
+            }
+        }
+
+        // Output max hour hat and se
+
+        maxindex(maxValue_hat,2,maxInd,maxCount)
+        st_local("maxHour_hat" , strofreal(maxHour_hat[maxInd[1]]))
+        st_local("maxHour_se"  , strofreal(maxHour_se[maxInd[1]]))
+
+    }
+end
+
+
+
+
+
+capture confirm file "`rootPath'/cosinorEstimates.dta"
 
 if _rc != 0{
 
@@ -31,8 +110,8 @@ if _rc != 0{
     // Start with cosinor submodel vars
 
     foreach curVar in sin cos acrophase amplitude{
-        foreach i in 24 12 8{
-            local postList `postList' `curVar'`i'_hat `curVar'`i'_se `curVar'`i'_lb `curVar'`i'_ub `curVar'`i'_p
+        foreach p in 24 12 8{
+            local postList `postList' `curVar'`p'_hat `curVar'`p'_se `curVar'`p'_lb `curVar'`p'_ub `curVar'`p'_p
         }
     }
 
@@ -45,84 +124,7 @@ if _rc != 0{
     // Set postfile
 
     capture postutil clear
-    postfile cosinorpost str9 ID double(`postList') using "`rootPath'/`cosinorEstimatesFile'" , replace
-
-
-    ****************************************************************
-    ** Define cosinor model specification for max hour estimation **
-    ****************************************************************
-
-    cap mata: mata drop cosinorModel()
-    mata:
-        void cosinorModel(real scalar todo      , 
-                        real vector b         , 
-                        real vector sinCoef   , 
-                        real vector cosCoef   , 
-                        real scalar mesorCoef , 
-                        val                   , 
-                        grad                  , 
-                        hess)
-        {   
-
-            // Designation for model.  Note the "exp", which corresponds to "log link function" in glm used
-
-            val =   exp(
-                    sinCoef[1]:*sin(b:*2:*pi():/24) :+ cosCoef[1]:*cos(b:*2:*pi():/24)  :+ 
-                    sinCoef[2]:*sin(b:*2:*pi():/12) :+ cosCoef[2]:*cos(b:*2:*pi():/12)  :+
-                    sinCoef[3]:*sin(b:*2:*pi():/8)  :+ cosCoef[3]:*cos(b:*2:*pi():/8)   :+
-                    mesorCoef
-                    )
-        }
-    end
-
-    ****************************************************************************
-    ** Define function to find hour of global maximum of fitted cosinor model **
-    ****************************************************************************
-
-    cap mata: mata drop estimateMaxHour()
-    mata:
-        void estimateMaxHour(real vector sinCoef    , 
-                            real vector cosCoef    , 
-                            real scalar mesorCoef)
-        {
-
-            transmorphic S
-            vector bh, maxInd, maxCount, maxHour_hat, maxHour_se, maxValue_hat
-            scalar i
-
-            maxHour_hat  = J(1,0,.)
-            maxHour_se   = J(1,0,.) 
-            maxValue_hat = J(1,0,.)
-
-            // Run optimisation loop, using different initial guess for hour (i) each time
-
-            for (i=0; i<=23; i++){
-
-                S  = optimize_init()
-                optimize_init_argument(S, 1, sinCoef)
-                optimize_init_argument(S, 2, cosCoef)
-                optimize_init_argument(S, 3, mesorCoef)
-                optimize_init_evaluator(S, &cosinorModel())
-                optimize_init_params(S, J(1,1,i))
-                bh = optimize(S)
-
-                // Only keep results that are within 0 to 24 hours
-                
-                if (optimize_result_params(S):>=0 :& optimize_result_params(S):<=24){
-                    maxHour_hat = maxHour_hat, optimize_result_params(S)
-                    maxHour_se  = maxHour_se, sqrt(diagonal(optimize_result_V(S)))'
-                    maxValue_hat = maxValue_hat, optimize_result_value(S)
-                }
-            }
-
-            // Output max hour hat and se
-
-            maxindex(maxValue_hat,2,maxInd,maxCount)
-            st_local("maxHour_hat" , strofreal(maxHour_hat[maxInd[1]]))
-            st_local("maxHour_se"  , strofreal(maxHour_se[maxInd[1]]))
-
-        }
-    end
+    postfile cosinorpost str9 ID double(`postList') using "`rootPath'/cosinorEstimates.dta" , replace
 
     qui{
 
@@ -230,28 +232,28 @@ if _rc != 0{
 
             foreach curAxis in sin cos{
 
-                foreach i in 24 12 8{
+                foreach p in 24 12 8{
                     
-                    local `curAxis'`i'_hat  = .                                       
-                    local `curAxis'`i'_se   = .                                    
-                    local `curAxis'`i'_lb   = .          
-                    local `curAxis'`i'_ub   = .          
-                    local `curAxis'`i'_p    = .
+                    local `curAxis'`p'_hat  = .                                       
+                    local `curAxis'`p'_se   = .                                    
+                    local `curAxis'`p'_lb   = .          
+                    local `curAxis'`p'_ub   = .          
+                    local `curAxis'`p'_p    = .
 
-                    capture di _b[`curAxis'`i']
+                    capture di _b[`curAxis'`p']
 
                     // Get coefficients for each cosinor submodel
 
                     if _rc == 0{
 
-                        local `curAxis'`i'_hat  = _b[`curAxis'`i']                                         
-                        local `curAxis'`i'_se   = _se[`curAxis'`i']                                        
-                        local `curAxis'`i'_lb   = _b[`curAxis'`i'] + invnormal(0.025)*_se[`curAxis'`i']           
-                        local `curAxis'`i'_ub   = _b[`curAxis'`i'] + invnormal(0.975)*_se[`curAxis'`i']           
-                        local `curAxis'`i'_p    = 2*normal(-abs(_b[`curAxis'`i']/_se[`curAxis'`i']))
+                        local `curAxis'`p'_hat  = _b[`curAxis'`p']                                         
+                        local `curAxis'`p'_se   = _se[`curAxis'`p']                                        
+                        local `curAxis'`p'_lb   = _b[`curAxis'`p'] + invnormal(0.025)*_se[`curAxis'`p']           
+                        local `curAxis'`p'_ub   = _b[`curAxis'`p'] + invnormal(0.975)*_se[`curAxis'`p']           
+                        local `curAxis'`p'_p    = 2*normal(-abs(_b[`curAxis'`p']/_se[`curAxis'`p']))
                     }
 
-                    local postlist `postlist' (``curAxis'`i'_hat') (``curAxis'`i'_se') (``curAxis'`i'_lb') (``curAxis'`i'_ub') (``curAxis'`i'_p')
+                    local postlist `postlist' (``curAxis'`p'_hat') (``curAxis'`p'_se') (``curAxis'`p'_lb') (``curAxis'`p'_ub') (``curAxis'`p'_p')
                 }
             }
 
@@ -259,29 +261,29 @@ if _rc != 0{
             ** Estimate acrophases **
             *************************
 
-            foreach i in 24 12 8{
+            foreach p in 24 12 8{
                 
-                local acrophase`i'_hat   = .                                       
-                local acrophase`i'_se    = .                            
-                local acrophase`i'_lb    = .     
-                local acrophase`i'_ub    = . 
-                local acrophase`i'_p     = .
+                local acrophase`p'_hat   = .                                       
+                local acrophase`p'_se    = .                            
+                local acrophase`p'_lb    = .     
+                local acrophase`p'_ub    = . 
+                local acrophase`p'_p     = .
 
                 // For acrophase computation, reference quadrant is changed depending on + or - for sin beta
 
-                capture nlcom cond(_b[sin`i']<0,`i',0) + atan2(_b[sin`i'],_b[cos`i'])*`i'/(2*_pi) 
+                capture nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi) 
 
                 if _rc == 0{
 
-                    local acrophase`i'_hat   = r(b)[1,1]                                         
-                    local acrophase`i'_se    = sqrt(r(V)[1,1])                                   
-                    local acrophase`i'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-                    local acrophase`i'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-                    local acrophase`i'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                    local acrophase`p'_hat   = r(b)[1,1]                                         
+                    local acrophase`p'_se    = sqrt(r(V)[1,1])                                   
+                    local acrophase`p'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local acrophase`p'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local acrophase`p'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
 
                 }
 
-                local postlist `postlist' (`acrophase`i'_hat') (`acrophase`i'_se') (`acrophase`i'_lb') (`acrophase`i'_ub') (`acrophase`i'_p') 
+                local postlist `postlist' (`acrophase`p'_hat') (`acrophase`p'_se') (`acrophase`p'_lb') (`acrophase`p'_ub') (`acrophase`p'_p') 
                 
             }
 
@@ -289,27 +291,27 @@ if _rc != 0{
             ** Estimate amplitudes **
             *************************
 
-            foreach i in 24 12 8{
+            foreach p in 24 12 8{
                 
-                local amplitude`i'_hat   = .                                       
-                local amplitude`i'_se    = .
-                local amplitude`i'_lb    = .     
-                local amplitude`i'_ub    = .     
-                local amplitude`i'_p     = .  
+                local amplitude`p'_hat   = .                                       
+                local amplitude`p'_se    = .
+                local amplitude`p'_lb    = .     
+                local amplitude`p'_ub    = .     
+                local amplitude`p'_p     = .  
 
-                capture nlcom sqrt(_b[sin`i']^2+_b[cos`i']^2)
+                capture nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)
 
                 if _rc == 0{
 
-                    local amplitude`i'_hat   = r(b)[1,1]                                       
-                    local amplitude`i'_se    = sqrt(r(V)[1,1])                                   
-                    local amplitude`i'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
-                    local amplitude`i'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
-                    local amplitude`i'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                    local amplitude`p'_hat   = r(b)[1,1]                                       
+                    local amplitude`p'_se    = sqrt(r(V)[1,1])                                   
+                    local amplitude`p'_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
+                    local amplitude`p'_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
+                    local amplitude`p'_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
 
                 }
 
-                local postlist `postlist' (`amplitude`i'_hat') (`amplitude`i'_se') (`amplitude`i'_lb') (`amplitude`i'_ub') (`amplitude`i'_p')          
+                local postlist `postlist' (`amplitude`p'_hat') (`amplitude`p'_se') (`amplitude`p'_lb') (`amplitude`p'_ub') (`amplitude`p'_p')          
             }
             
             ***************************************************
@@ -348,9 +350,9 @@ if _rc != 0{
 
                 // Initialize "at statement" for marginal hour value where global max occurs
 
-                foreach i in 24 12 8{
+                foreach p in 24 12 8{
                     
-                    local per`i' sin`i'=(`=sin(`maxHour_hat'*2*_pi/`i')')cos`i'=(`=cos(`maxHour_hat'*2*_pi/`i')')
+                    local per`p' sin`p'=(`=sin(`maxHour_hat'*2*_pi/`p')')cos`p'=(`=cos(`maxHour_hat'*2*_pi/`p')')
 
                 }
 
@@ -387,8 +389,8 @@ if _rc != 0{
 
             local marginList
             forvalues h = 0(1)23{
-                foreach i in 24 12 8{
-                    local per`i' sin`i'=(`=sin(`h'*2*_pi/`i')')cos`i'=(`=cos(`h'*2*_pi/`i')')
+                foreach p in 24 12 8{
+                    local per`p' sin`p'=(`=sin(`h'*2*_pi/`p')')cos`p'=(`=cos(`h'*2*_pi/`p')')
                 }
                 local marginList `marginList' at(`per24'`per12'`per8')
             }
@@ -441,4 +443,4 @@ if _rc != 0{
     frame drop tempset
 }
 
-joinby ID using "`rootPath'/`cosinorEstimatesFile'"
+joinby ID using "`rootPath'/cosinorEstimates.dta"
