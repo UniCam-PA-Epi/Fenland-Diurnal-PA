@@ -32,16 +32,16 @@ gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 
 // Convert J/min/kg to kJ/hour/kg
 
-replace mesor       = exp(mesor) * 60/1000
-replace totalPAEE   = totalPAEE  * 60/1000
-replace maxValue    = maxValue   * 60/1000
+//replace mesor       = exp(mesor) * 60/1000
+//replace totalPAEE   = totalPAEE  * 60/1000
+//replace maxValue    = maxValue   * 60/1000
 
 ****************************************************************************************
 ** Outcome variables, continuous control variables, and categorical control variables **
 ****************************************************************************************
 
 #delimit ;
-local outcomeVars   glucose0
+local outcomeVars   //glucose0
                     glucose120
                     insulin
                     nefa
@@ -56,6 +56,7 @@ local outcomeVars   glucose0
                     ;
 
 local contCovVars   c.age
+                    c.rhr
                     ;
 
 local catCovVars    i.sex
@@ -137,7 +138,7 @@ foreach curOutcomeVar of local outcomeVars{
 
     local curRow = `curRow'+1
 
-    forvalues i = 1/2{
+    forvalues i = 2/2{
         
         **********************************************************
         ** Apply nested GLM gaussian linear model with log link **
@@ -179,7 +180,7 @@ foreach curOutcomeVar of local outcomeVars{
         #delimit cr
         
         estimates store fullModel
-        asdf
+        
         // Store results of nested Wald tests for the contribution of each block to the model
         
         putexcel set "Results/6_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
@@ -292,9 +293,9 @@ foreach curOutcomeVar of local outcomeVars{
                 local curCol = char(67+2*`curSex')
                 putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
 
-            }
+            } 
         }
-
+        
 
         **********************************************
         ** Construct acrophase time-response curves **
@@ -399,15 +400,17 @@ foreach curOutcomeVar of local outcomeVars{
                         ;                      
                 #delimit cr
 
-                capture mkdir Plots
-                graph save "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'" "Plots/`curOutcomeVar'_`curExposure'_s`curSex'_m`i'.gph", replace
-                graph close "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'"
+                //capture mkdir Plots
+                //graph save "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'" "Plots/`curOutcomeVar'_`curExposure'_s`curSex'_m`i'.gph", replace
+                //graph close "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'"
 
                 drop hat lb ub timePLot
                 
             }       
         }
     }
+
+    asdf
 }
 
 frame change dataset

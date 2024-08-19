@@ -15,6 +15,29 @@ label values sex sexlab
 
 gen age = AgeAtTest_DM_Attended
 
+rename AGE_GROUP agecat
+label define agelab 1 "<45" 2 ">=45 & <55" 3 ">=55"
+label values agecat agelab
+
+*********
+** BMI **
+*********
+
+rename BMI bmi
+rename BMI_GROUP bmicat
+label define bmilab 1 "Normal" 2 "Overweight" 3 "Obese"
+label values bmicat bmilab
+
+*********
+** RHR **
+*********
+
+rename RestingHeartRate rhr
+egen rhr2 = rowmedian(BPPR1 BPPR2 BPPR3)
+replace rhr = rhr2 if rhr == . & rhr2 != .
+drop rhr2
+
+
 
 ***************         
 ** Ethnicity **
