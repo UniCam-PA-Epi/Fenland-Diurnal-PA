@@ -84,11 +84,11 @@ local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 **********************************
 
 capture mkdir Results
-capture erase "Results/3_jointAssociations.xlsx"
+capture erase "Results/6_jointAssociations.xlsx"
 
 qui forvalues i = 1/2{
 
-    putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
+    putexcel set "Results/6_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
     putexcel A1 = ("outcomeVar")
     putexcel B1 = ("Pvalue: mesor")
     putexcel C1 = ("Pvalue: mesor#sex")
@@ -109,7 +109,7 @@ qui forvalues i = 1/2{
 
     foreach curExposure in mesor amplitude24 amplitude12 amplitude8{
 
-        putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+        putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
         putexcel A1 = ("outcomeVar")
         putexcel B1 = ("Estimate: Women")
         putexcel C1 = ("Estimate: Men")
@@ -117,7 +117,7 @@ qui forvalues i = 1/2{
 
     foreach curExposure in acrophase24 acrophase12 acrophase8{
 
-        putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+        putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
         putexcel A1 = ("outcomeVar")
         putexcel B1 = ("Amplitude: Women")
         putexcel C1 = ("Normalised acrophase: Women")
@@ -182,7 +182,7 @@ foreach curOutcomeVar of local outcomeVars{
         asdf
         // Store results of nested Wald tests for the contribution of each block to the model
         
-        putexcel set "Results/3_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
+        putexcel set "Results/6_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
         putexcel A`curRow' = ("`curOutcomeVar'")
 
         forvalues j = 1/18{
@@ -202,7 +202,7 @@ foreach curOutcomeVar of local outcomeVars{
         
         foreach curExposure in mesor amplitude24 amplitude12 amplitude8{
 
-            putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+            putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
             putexcel A`curRow' = ("`curOutcomeVar'")
             
             estimates restore fullModel
@@ -238,7 +238,7 @@ foreach curOutcomeVar of local outcomeVars{
 
         foreach curExposure in acrophase24 acrophase12 acrophase8{
 
-            putexcel set "Results/3_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
+            putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
             putexcel A`curRow' = ("`curOutcomeVar'")
 
             estimates restore fullModel

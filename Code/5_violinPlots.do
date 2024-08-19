@@ -132,7 +132,8 @@ gr_edit .legend.Edit
 
 #delimit cr
 
-graph export "Results/3_violinPlots.png" , height(2000) width(2750) replace
+capture mkdir Results
+graph export "Results/5_violinPlots.png" , height(2000) width(2750) replace
 graph close _all
 
 frame change dataset

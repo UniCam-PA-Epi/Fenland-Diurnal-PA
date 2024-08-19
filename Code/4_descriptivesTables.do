@@ -39,13 +39,14 @@ local catVars   alcohol
 
 #delimit cr
 
-capture erase "Results/2_descriptiveTables.xlsx"
+capture mkdir Results
+capture erase "Results/4_descriptiveTables.xlsx"
 
 levelsof sex, local(sexLevels)
 foreach curSex of local sexLevels{
     
     local curSexLabel : label (sex) `curSex'
-    putexcel set "Results/2_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
+    putexcel set "Results/4_descriptiveTables.xlsx", sheet("`curSexLabel'") modify
 
     preserve
     keep if sex == `curSex'
