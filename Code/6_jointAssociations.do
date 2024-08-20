@@ -41,8 +41,7 @@ gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 ****************************************************************************************
 
 #delimit ;
-local outcomeVars   //glucose0
-                    glucose120
+local outcomeVars   glucose120
                     insulin
                     nefa
                     leptin
@@ -79,6 +78,7 @@ local catCovVars    i.sex
 
 local modelLevel1 `contCovVars' `catCovVars'
 local modelLevel2 `contCovVars' `catCovVars' c.fatMass
+local modelLevel3 `contCovVars' `catCovVars' c.fatMass c.totalPAEE
 
 **********************************
 ** Initialise excel spreadsheet **
@@ -87,7 +87,7 @@ local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 capture mkdir Results
 capture erase "Results/6_jointAssociations.xlsx"
 
-qui forvalues i = 1/2{
+qui forvalues i = 1/3{
 
     putexcel set "Results/6_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
     putexcel A1 = ("outcomeVar")
@@ -138,11 +138,11 @@ foreach curOutcomeVar of local outcomeVars{
 
     local curRow = `curRow'+1
 
-    forvalues i = 2/2{
+    forvalues i = 1/3{
         
         **********************************************************
         ** Apply nested GLM gaussian linear model with log link **
-        **********************************************************
+        *****************************************************s*****
 
         // Note that when "crp" is the outcome var, we apply an inverse-Gaussian GLM due to the extreme right tail.
         // This choice helps resolve convergence issues that may arise when using a Gaussian GLM for "crp".
@@ -179,6 +179,8 @@ foreach curOutcomeVar of local outcomeVars{
                         ;
         #delimit cr
         
+        capture mkdir Models
+        estimates save Models/`curOutcomeVar'_m`i' , replace
         estimates store fullModel
         
         // Store results of nested Wald tests for the contribution of each block to the model
@@ -274,7 +276,7 @@ foreach curOutcomeVar of local outcomeVars{
                 // This should be interpretted based on the intended direction for the current outcome.  For example, maximising "insulin" would not be good in this context!
                 // In that example, finding the minimum would be desirable (which would just be the normalised valued + 0.5)
 
-                nlcom cond(_b[`curExposure'_sin:`curSex'.sex]<0,1,0)+atan2(_b[`curExposure'_sin:`curSex'.sex], _b[`curExposure'_cos:`curSex'.sex])*1/(2*_pi)
+                nlcom (cond(_b[`curExposure'_sin:`curSex'.sex]<0,2*_pi,0)+atan2(_b[`curExposure'_sin:`curSex'.sex], _b[`curExposure'_cos:`curSex'.sex]))*1/(2*_pi)
 
                 local curEstimate   = r(b)[1,1]
                 local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
@@ -295,122 +297,7 @@ foreach curOutcomeVar of local outcomeVars{
 
             } 
         }
-        
-
-        **********************************************
-        ** Construct acrophase time-response curves **
-        **********************************************
-
-        foreach curExposure in acrophase24 acrophase12 acrophase8{
-            
-            // Get p-values for the statistical significance of acrophase time-response curves for each sex
-            // This is determined from the signficance of the derived amplitude feature of the cosinor model
-            // If the amplitude is not significant, the curve is not significant.
-
-            estimates restore fullModel
-            margins, over(sex) eydx(`curExposure'_sin `curExposure'_cos) asobserved post
-
-            forvalues curSex = 0/1{
-
-                nlcom sqrt((_b[`curExposure'_sin:`curSex'.sex])^2+(_b[`curExposure'_cos:`curSex'.sex])^2)
-                local Pvalue_s`curSex' = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
-
-                if `Pvalue_s`curSex'' < 0.001   local Pvalue_s`curSex' = "p<0.001"
-                else                            local Pvalue_s`curSex' = "p=`=trim("`: display %10.3f `Pvalue_s`curSex'''")'"
-
-            }
-
-            // Initialise marginal value points. 64 points resolution produces good looking plots, so going with that.
-            
-            local plotResolution = 32
-            local marginsList
-            forvalues j = 0/`plotResolution'{
-                
-                local marginsList `marginsList' at(`curExposure'_sin=(`=sin(`j'*2*_pi/`plotResolution')')`curExposure'_cos=(`=cos(`j'*2*_pi/`plotResolution')'))
-
-            }
-
-            forvalues curSex = 0/1{
-                
-                // Compute marginal values at the selected points: point estimates (hat) and upper and lower bounds  (lb, ub)
-                // Also compute the mean overall values for the current sex, which is to compute relative differences.
-
-                gen hat = .
-                gen lb = .
-                gen ub = .
-
-                estimates restore fullModel
-                margins if sex==`curSex', at() `marginsList' asobserved post
-                
-                // Compute relative difference between each point estimate (i.e. currentValue) and the overall mean (i.e. referenceValue):
-                // (currentValue - referenceValue)/referenceValue
-
-                forvalues j = 1/`=1+`plotResolution''{
-
-                    nlcom (_b[`=`j'+1'._at]-_b[1._at])/_b[1._at]
-                    replace hat = r(b)[1,1]                                     in `j'
-                    replace lb  = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  in `j'
-                    replace ub  = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])  in `j'
-
-                }
-
-                // Setup time-axis labeling
-
-                if regexm("`curExposure'","24") == 1 local curTime = 24 
-                if regexm("`curExposure'","12") == 1 local curTime = 12 
-                if regexm("`curExposure'","8")  == 1 local curTime = 8
-                            
-                gen timePLot = `curTime'*(_n-1)/`plotResolution' if hat !=.
-                local timeLab 0 `=1*`curTime'/4' `=2*`curTime'/4' `=3*`curTime'/4' `curTime'
-
-                // Plot acrophase-response curve based on all values computed above
-
-                set graphics on
-
-                #delimit ;
-                twoway  (
-                        rarea lb ub timePLot if hat !=.
-                        ,
-                        fcolor(navy%40)
-                        lcolor(navy%0)
-                        )
-                        (
-					    line hat timePLot  if hat !=.
-					    ,
-					    lcolor(navy)
-					    )
-                        (
-                        func y=0
-                        ,
-					    lcolor(gs8)
-					    lpattern(dash)
-					    lwidth(0.2)
-					    range(0 `curTime')
-					    )
-                        (
-                        ,
-                        xlab(`timeLab'   , nogrid angle(0))
-                        ylab(-.5(0.25).5 , nogrid angle(0))
- 					    graphregion(color(white))
-                        name("`curOutcomeVar'_`curExposure'_s`curSex'_m`i'", replace)
-
-                        note("`Pvalue_s`curSex''", ring(0) position(1))
-					    legend(off)                       
-                        )
-                        ;                      
-                #delimit cr
-
-                //capture mkdir Plots
-                //graph save "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'" "Plots/`curOutcomeVar'_`curExposure'_s`curSex'_m`i'.gph", replace
-                //graph close "`curOutcomeVar'_`curExposure'_s`curSex'_m`i'"
-
-                drop hat lb ub timePLot
-                
-            }       
-        }
-    }
-
-    asdf
+    }   
 }
 
 frame change dataset
