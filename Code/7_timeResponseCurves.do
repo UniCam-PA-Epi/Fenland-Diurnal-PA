@@ -33,29 +33,29 @@ gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 
 
 #delimit ;
-local outcomeVars   glucose120
+local outcomeVars   //glucose120
                     insulin
-                    nefa
-                    leptin
-                    adiponectin
-                    ldl
-                    hdl
-                    fatFreeMass
-                    mbpsys
-                    mbpdia
-                    crp
+                    //nefa
+                    //leptin
+                    //adiponectin
+                    //ldl
+                    //hdl
+                    //fatFreeMass
+                    //mbpsys
+                    //mbpdia
+                    //crp
                     ;
 #delimit cr
 
 foreach curOutcomeVar of local outcomeVars{
 
-    forvalues i = 1/3{
+    forvalues i = 4/5{
 
         ********************************************************************************
         ** Construct acrophase time-response curves for each phase value (24, 12, 18) **
         ********************************************************************************
 
-        local dothis = 0
+        local dothis = 1
 
         if `dothis' == 1{
 
@@ -101,7 +101,7 @@ foreach curOutcomeVar of local outcomeVars{
                 estimates use Models/`curOutcomeVar'_m`i'
                 estimates esample:
                 margins if sex==`curSex', at() `marginsList' asobserved post
-                
+
                 // Compute relative difference between each point estimate (i.e. currentValue) and the overall mean (i.e. referenceValue):
                 // (currentValue - referenceValue)/referenceValue
 
@@ -211,19 +211,19 @@ foreach curOutcomeVar of local outcomeVars{
                 // Calculate sin and cos components for each phase incrementally shifting through one cycle
                 // Here we are holding the 12 hour cycle at its worst location.
 
-                //local p24sin acrophase24_sin=(`=sin(`acrophase24_s`curSex''+(`j'*2*_pi/`plotResolution'))')
-                //local p24cos acrophase24_cos=(`=cos(`acrophase24_s`curSex''+(`j'*2*_pi/`plotResolution'))')
+                local p24sin acrophase24_sin=(`=sin(`acrophase24_s`curSex''+(`j'*2*_pi/`plotResolution'))')
+                local p24cos acrophase24_cos=(`=cos(`acrophase24_s`curSex''+(`j'*2*_pi/`plotResolution'))')
 
                 //local p24sin acrophase24_sin=(`=sin(`acrophase24_s`curSex'')')
                 //local p24cos acrophase24_cos=(`=sin(`acrophase24_s`curSex'')')
                 //local p24all `p24sin'`p24cos'
 
-                local p12sin acrophase12_sin=(`=sin(`acrophase12_s`curSex''+(`j'*2*_pi/`plotResolution'))')
-                local p12cos acrophase12_cos=(`=cos(`acrophase12_s`curSex''+(`j'*2*_pi/`plotResolution'))')
+                local p12sin acrophase12_sin=(`=sin(`acrophase12_s`curSex''+(2*`j'*2*_pi/`plotResolution'))')
+                local p12cos acrophase12_cos=(`=cos(`acrophase12_s`curSex''+(2*`j'*2*_pi/`plotResolution'))')
                 local p12all `p12sin'`p12cos'
 
-                local p8sin acrophase8_sin=(`=sin(`acrophase8_s`curSex''+(`j'*2*_pi/`plotResolution'))')
-                local p8cos acrophase8_cos=(`=cos(`acrophase8_s`curSex''+(`j'*2*_pi/`plotResolution'))')
+                local p8sin acrophase8_sin=(`=sin(`acrophase8_s`curSex''+(3*`j'*2*_pi/`plotResolution'))')
+                local p8cos acrophase8_cos=(`=cos(`acrophase8_s`curSex''+(3*`j'*2*_pi/`plotResolution'))')
                 local p8all `p8sin'`p8cos'
 
                 //local marginsList `marginsList' at(`p24all'`p12all'`p8all')
@@ -252,7 +252,7 @@ foreach curOutcomeVar of local outcomeVars{
             
             // Generate the time axis for plotting (0 to 1 represents the full transition)
 
-            gen timePLot = 1*(_n-1)/`plotResolution' if hat !=.
+            gen timePLot = 24*(_n-1)/`plotResolution' if hat !=.
 
             set graphics on
 
@@ -274,11 +274,11 @@ foreach curOutcomeVar of local outcomeVars{
                     lcolor(gs8)
                     lpattern(dash)
                     lwidth(0.2)
-                    range(0 1)
+                    range(0 24)
                     )
                     (
                     ,
-                    xlab(0(0.25)1    , nogrid angle(0))
+                    xlab(0(6)24    , nogrid angle(0))
                     ylab(-.5(0.25).5 , nogrid angle(0))
                     graphregion(color(white))
                     name("`curOutcomeVar'_acrophaseAll_s`curSex'_m`i'", replace)
@@ -291,7 +291,7 @@ foreach curOutcomeVar of local outcomeVars{
 
             capture mkdir Plots
             graph save "`curOutcomeVar'_acrophaseAll_s`curSex'_m`i'" "Plots/`curOutcomeVar'_acrophaseAll_s`curSex'_m`i'.gph", replace
-            graph close "`curOutcomeVar'_acrophaseAll_s`curSex'_m`i'"
+            //graph close "`curOutcomeVar'_acrophaseAll_s`curSex'_m`i'"
 
             drop hat lb ub timePLot
 

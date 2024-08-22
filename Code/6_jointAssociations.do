@@ -41,16 +41,16 @@ gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 ****************************************************************************************
 
 #delimit ;
-local outcomeVars   glucose120
-                    insulin
-                    nefa
-                    leptin
-                    adiponectin
-                    ldl
-                    hdl
-                    fatFreeMass
-                    mbpsys
-                    mbpdia
+local outcomeVars   //glucose120
+                    //insulin
+                    //nefa
+                    //leptin
+                    //adiponectin
+                    //ldl
+                    //hdl
+                    //fatFreeMass
+                    //mbpsys
+                    //mbpdia
                     crp
                     ;
 
@@ -79,15 +79,17 @@ local catCovVars    i.sex
 local modelLevel1 `contCovVars' `catCovVars'
 local modelLevel2 `contCovVars' `catCovVars' c.fatMass
 local modelLevel3 `contCovVars' `catCovVars' c.fatMass c.totalPAEE
+local modelLevel4 `contCovVars' `catCovVars' c.fatMass c.totalPAEE c.maxValue
+local modelLevel5 `contCovVars' `catCovVars' c.fatMass c.totalPAEE c.maxValue c.maxHour24_sin c.maxHour24_cos
 
 **********************************
 ** Initialise excel spreadsheet **
 **********************************
 
 capture mkdir Results
-capture erase "Results/6_jointAssociations.xlsx"
+//capture erase "Results/6_jointAssociations.xlsx"
 
-qui forvalues i = 1/3{
+qui forvalues i = 1/5{
 
     putexcel set "Results/6_jointAssociations.xlsx", sheet("waldBlockTest_m`i'") modify
     putexcel A1 = ("outcomeVar")
@@ -138,7 +140,7 @@ foreach curOutcomeVar of local outcomeVars{
 
     local curRow = `curRow'+1
 
-    forvalues i = 1/3{
+    forvalues i = 4/5{
         
         **********************************************************
         ** Apply nested GLM gaussian linear model with log link **
