@@ -132,8 +132,8 @@ if _rc != 0{
         ** Initialise dataset + outcome modelling variables **
         ******************************************************
         
-        keep ID paee_hour*
-        reshape long paee_hour, i(ID) j(hour)
+        keep ID paee_hour* pwear_hour*
+        reshape long paee_hour pwear_hour, i(ID) j(hour)
         drop if paee_hour == .
 
         // Generate sin and cos axis variables for 24, 12, and 8 hour periods
@@ -206,8 +206,8 @@ if _rc != 0{
         ** Apply cosinor GLM model, using gamma with log-link function **
         *****************************************************************
 
-        glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8, family(gamma) link(log)
-
+        glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8 [aw=pwear_hour], family(gamma) link(log)
+        
         // If model converges, continue.
 
         if e(converged)==1{
@@ -283,6 +283,8 @@ if _rc != 0{
 
                 }
 
+                else local acrophase`p'_hat = cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi) 
+
                 local postlist `postlist' (`acrophase`p'_hat') (`acrophase`p'_se') (`acrophase`p'_lb') (`acrophase`p'_ub') (`acrophase`p'_p') 
                 
             }
@@ -311,6 +313,8 @@ if _rc != 0{
 
                 }
 
+                else local amplitude`p'_hat = sqrt(_b[sin`p']^2+_b[cos`p']^2)
+                    
                 local postlist `postlist' (`amplitude`p'_hat') (`amplitude`p'_se') (`amplitude`p'_lb') (`amplitude`p'_ub') (`amplitude`p'_p')          
             }
             
@@ -418,6 +422,14 @@ if _rc != 0{
                     local totalPAEE_lb    = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])      
                     local totalPAEE_ub    = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])      
                     local totalPAEE_p     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1])))
+                }
+
+                else{
+                    
+                    predict x
+                    su x, detail
+                    local totalPAEE_hat = r(sum)
+
                 }
 
             }

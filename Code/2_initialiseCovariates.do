@@ -206,5 +206,25 @@ replace cardiometabol_med=2 if cardiometabol_med == .
 label define cardiometabol_labels 0 "No cardiometabol med" 1 "Taking cardiometabol med" 2 "Missing/Unknown" 
 label values cardiometabol_med cardiometabol_labels
 
+**********************************************************************************************
+** Time of testing clinical assessments started, approximately (using rest test start time) **
+**********************************************************************************************
+
+gen testTime = mm(clock(RestStart, "hm")) + 60*hh(clock(RestStart, "hm"))
+replace testTime = P_startminofday if testTime == .
+replace testTime = mm(clock(TimeOf120BloodSample, "hm")) + 60*hh(clock(TimeOf120BloodSample, "hm")) if testTime < 360
+
+gen testTime_sin = sin(testTime*2*_pi/1440)
+gen testTime_cos = cos(testTime*2*_pi/1440)
+
+drop testTime
+
+// also adding testDay
+
+gen testDay     = doy(date(P_startdate, "DMY", 2022))
+gen testDay_sin = sin(testDay*2*_pi/365.25)
+gen testDay_cos = cos(testDay*2*_pi/365.25)
+
+drop testDay
 
 
