@@ -18,6 +18,6 @@ include 3_applyCosinorModel.do
 
 //include 4_descriptivesTables.do
 //include 5_violinPlots.do
-//include 6_jointAssociations.do
+include 6_jointAssociations.do
 //include 7_timeResponseCurves.do
 //include 8_shapeAnalysis.do

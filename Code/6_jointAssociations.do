@@ -234,7 +234,7 @@ qui foreach curOutcomeVar of local outcomeVars{
         if r(p) < 0.001 local curP = "p<0.001"
         else            local curP = "p=`=trim("`: display %10.3f r(p)'")'"
 
-        local curDeltaAIC = "{&Delta}AIC=`=trim("`: display %10.1f lrMat[6,5]-lrMat[2,5]'")'"
+        local curDeltaAIC = "{&Delta}AIC=`=trim("`: display %10.0f lrMat[6,5]-lrMat[2,5]'")'"
 
         foreach curPercentile in p25 p50 p75{
 
@@ -254,11 +254,12 @@ qui foreach curOutcomeVar of local outcomeVars{
         
             }
 
-            margins, over(sex) at((`curPercentile') totalPAEE)
+            margins, over(sex) at((`curPercentile') totalPAEE) asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")') 
             local curRef_s0 = r(b)[1,1]
             local curRef_s1 = r(b)[1,2]
 
-            margins, over(sex) `marginsList' asobserved
+            margins, over(sex) `marginsList' asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")') 
+
 
             #delimit ;
             marginsplot,    plotdimension(sex) 
@@ -302,7 +303,7 @@ qui foreach curOutcomeVar of local outcomeVars{
                 graphregion(color(white) 
                 margin(l=17 r=17 t=32 b=32)) 
                 name(`curOutcomeVar'_m`i', replace)
-                note("`curP'" "`curDeltaAIC'", ring(0) position(11) size(2))
+                note("`curP'" "`curDeltaAIC'", ring(0) position(11) size(1.7))
                 ;
         #delimit cr
         
@@ -311,6 +312,7 @@ qui foreach curOutcomeVar of local outcomeVars{
         graph close _all
 
     }
+    
 
     local curRow = `curRow'+1   
 }
