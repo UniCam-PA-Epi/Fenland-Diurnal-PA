@@ -10,23 +10,22 @@ frame change tempset
 // Define continuous and categorical variables
 
 #delimit ;
-local contVars  age
-                fatMass
-                fatFreeMass
+local contVars  glucose120
                 insulin
                 leptin
                 nefa
-                ldl
                 adiponectin
-                crp
-                mbpdia
+                ldl
+                hdl
                 mbpsys
-                glucose0
-                glucose120
+                mbpdia
+                crp
                 ;
 
-local catVars   alcohol
+local catVars   agecat
+                bmicat
                 ethnic
+                alcohol
                 education
                 income
                 smoke

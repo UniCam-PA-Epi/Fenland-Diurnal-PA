@@ -1,11 +1,11 @@
 version 17.0
 
 clear
-estimates clear
+//estimates clear
 set more off
 set seed 1234
 
-args rootPath
+args rootPath getPackages
 
 frames reset
 frame rename default dataset

@@ -228,3 +228,6 @@ gen testDay_cos = cos(testDay*2*_pi/365.25)
 drop testDay
 
 
+
+
+
