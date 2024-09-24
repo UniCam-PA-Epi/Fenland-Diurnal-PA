@@ -15,6 +15,29 @@ label values sex sexlab
 
 gen age = AgeAtTest_DM_Attended
 
+rename AGE_GROUP agecat
+label define agelab 1 "<45" 2 ">=45 & <55" 3 ">=55"
+label values agecat agelab
+
+*********
+** BMI **
+*********
+
+rename BMI bmi
+rename BMI_GROUP bmicat
+label define bmilab 1 "Normal" 2 "Overweight" 3 "Obese"
+label values bmicat bmilab
+
+*********
+** RHR **
+*********
+
+rename RestingHeartRate rhr
+egen rhr2 = rowmedian(BPPR1 BPPR2 BPPR3)
+replace rhr = rhr2 if rhr == . & rhr2 != .
+drop rhr2
+
+
 
 ***************         
 ** Ethnicity **
@@ -182,6 +205,29 @@ replace cardiometabol_med=1 if BNF_OralAntidiabetic==1
 replace cardiometabol_med=2 if cardiometabol_med == .
 label define cardiometabol_labels 0 "No cardiometabol med" 1 "Taking cardiometabol med" 2 "Missing/Unknown" 
 label values cardiometabol_med cardiometabol_labels
+
+**********************************************************************************************
+** Time of testing clinical assessments started, approximately (using rest test start time) **
+**********************************************************************************************
+
+gen testTime = mm(clock(RestStart, "hm")) + 60*hh(clock(RestStart, "hm"))
+replace testTime = P_startminofday if testTime == .
+replace testTime = mm(clock(TimeOf120BloodSample, "hm")) + 60*hh(clock(TimeOf120BloodSample, "hm")) if testTime < 360
+
+gen testTime_sin = sin(testTime*2*_pi/1440)
+gen testTime_cos = cos(testTime*2*_pi/1440)
+
+drop testTime
+
+// also adding testDay
+
+gen testDay     = doy(date(P_startdate, "DMY", 2022))
+gen testDay_sin = sin(testDay*2*_pi/365.25)
+gen testDay_cos = cos(testDay*2*_pi/365.25)
+
+drop testDay
+
+
 
 
 
