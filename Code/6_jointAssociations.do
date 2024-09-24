@@ -1,5 +1,7 @@
 version 17.0
 
+graph drop _all
+
 frame copy dataset tempset
 frame change tempset
 
@@ -38,26 +40,23 @@ gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 
 // Convert J/min/kg to kJ/hour/kg
 
-//replace mesor       = exp(mesor) * 60/1000
 replace totalPAEE   = totalPAEE  * 60/1000
-//replace maxValue    = maxValue   * 60/1000
 
 ****************************************************************************************
 ** Outcome variables, continuous control variables, and categorical control variables **
 ****************************************************************************************
 
 #delimit ;
-local outcomeVars   //cmrs
-                    //glucose120
+local outcomeVars   glucose120
                     insulin
-                    //leptin
-                    //nefa
-                    //adiponectin
-                    //ldl
-                    //hdl
-                    //mbpsys
-                    //mbpdia
-                    //crp
+                    leptin
+                    nefa
+                    adiponectin
+                    ldl
+                    hdl
+                    mbpsys
+                    mbpdia
+                    crp
                     ;
 
 local contCovVars   c.age
@@ -107,10 +106,7 @@ forvalues i = 1/2{
     putexcel I1 = ("AIC: cosinor model totalPAEE interactions")
     putexcel J1 = ("Pvalue: cosinor model sex interactions")
     putexcel K1 = ("AIC: cosinor model sex interactions")
-    putexcel L1 = ("Pvalue: cosinor model quadratic")
-    putexcel M1 = ("AIC: cosinor model quadratic")
-    putexcel N1 = ("Pvalue: full cosinor model vs base totalPAEE model")
-
+    putexcel L1 = ("Pvalue: full cosinor model vs base totalPAEE model")
 
 }
 
@@ -125,7 +121,7 @@ qui foreach curOutcomeVar of local outcomeVars{
         
         **********************************************************
         ** Apply nested GLM gaussian linear model with log link **
-        *****************************************************s*****
+        **********************************************************
 
         // Note that when "crp" is the outcome var, we apply an inverse-Gaussian GLM due to the extreme right tail.
         // This choice helps resolve convergence issues that may arise when using a Gaussian GLM for "crp".
@@ -189,29 +185,6 @@ qui foreach curOutcomeVar of local outcomeVars{
                             c.acrophase12_sin#i.sex  c.acrophase12_cos#i.sex 
                             c.acrophase8_sin#i.sex   c.acrophase8_cos#i.sex
                             )
-                            /*
-
-                            (
-                            c.acrophase24_sin#c.acrophase12_sin
-                            c.acrophase24_sin#c.acrophase8_sin
-                            c.acrophase12_sin#c.acrophase8_sin
-
-                            c.acrophase24_cos#c.acrophase12_cos
-                            c.acrophase24_cos#c.acrophase8_cos
-                            c.acrophase12_cos#c.acrophase8_cos
-                            )
-
-                            (
-                            c.mesor#c.mesor
-                            c.amplitude24#c.amplitude24
-                            c.amplitude12#c.amplitude12
-                            c.amplitude8#c.amplitude8
-
-                            c.acrophase24_sin#c.acrophase24_sin 
-                            c.acrophase12_sin#c.acrophase12_sin
-                            c.acrophase8_sin#c.acrophase8_sin
-                            )
-                            */
 
                             if
                             `curOutcomeVar' != .         
@@ -236,7 +209,7 @@ qui foreach curOutcomeVar of local outcomeVars{
         count if e(sample) == 1 & sex == 1
         putexcel C`curRow' = (r(N))
 
-        forvalues j = 0/6{
+        forvalues j = 0/4{
             local curCol = char(68+`=`j'*2')  
             putexcel `curCol'`curRow' = (lrMat[`=`j'+2',4])
             local curCol = char(69+`=`j'*2')
@@ -244,7 +217,7 @@ qui foreach curOutcomeVar of local outcomeVars{
         }
 
         noisi lrtest m1
-        putexcel N`curRow' = (r(p))
+        putexcel L`curRow' = (r(p))
         putexcel clear
         
         if r(p) < 0.001 local curP = "p<0.001"
@@ -259,8 +232,9 @@ qui foreach curOutcomeVar of local outcomeVars{
 
 
 
-
-
+        ********************************
+        ** Pooled time-response curve **
+        ********************************
 
         local plotResolution = 64
         local marginsList
@@ -285,11 +259,9 @@ qui foreach curOutcomeVar of local outcomeVars{
         #delimit ;
         marginsplot,    recast(line)
                         plot1opts(lcolor(navy))
-                        //plot2opts(lcolor(maroon))
 
                         recastci(rarea) 
                         ci1opts(fcolor(navy%30) lcolor(navy%0)) 
-                        //ci2opts(fcolor(maroon%30) lcolor(maroon%0)) 
                         
                         title("Pooled", size(2.5) color(black) nospan)
 
@@ -310,18 +282,15 @@ qui foreach curOutcomeVar of local outcomeVars{
 
         #delimit cr
 
-        asdf
         capture mkdir Plots
-        graph save `curOutcomeVar'_m`i' Plots/`curOutcomeVar'_pooled_m`i'.gph , replace
+        graph save "Pooled" Plots/`curOutcomeVar'_pooled_m`i'.gph , replace
         graph close _all
 
 
 
-
-
-
-
-
+        ***********************************************
+        ** PA volume stratified time-response curves **
+        ***********************************************
 
         foreach curPercentile in p25 p50 p75{
 
@@ -370,6 +339,8 @@ qui foreach curOutcomeVar of local outcomeVars{
 
                             graphregion(color(white))
                             legend(off)
+                            yline(`curRef_s0', lcolor(navy%40))
+                            yline(`curRef_s1', lcolor(maroon%40))
 
                             name(`curPercentile', replace)
 
@@ -389,13 +360,13 @@ qui foreach curOutcomeVar of local outcomeVars{
                 xcommon 
                 graphregion(color(white) 
                 margin(l=17 r=17 t=32 b=32)) 
-                name(`curOutcomeVar'_m`i', replace)
+                name("Strat", replace)
                 note("`stratDeltaAIC'", ring(0) position(11) size(1.7))
                 ;
         #delimit cr
         
         capture mkdir Plots
-        graph save `curOutcomeVar'_m`i' Plots/`curOutcomeVar'_strat_m`i'.gph , replace
+        graph save "Strat" Plots/`curOutcomeVar'_strat_m`i'.gph , replace
         graph close _all
 
     }
@@ -407,109 +378,3 @@ qui foreach curOutcomeVar of local outcomeVars{
 frame change dataset
 frame drop tempset
 
-
-
-       */
-
-        /*
-
-        *********************************************************
-        ** Get point estimates for the "linear" curve features **
-        *********************************************************
-        
-        foreach curExposure in mesor amplitude24 amplitude12 amplitude8{
-
-            putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
-            putexcel A`curRow' = ("`curOutcomeVar'")
-            
-            estimates restore fullModel
-            margins, over(sex) eydx(`curExposure') asobserved post
-
-            forvalues curSex = 0/1{
-                
-                nlcom _b[`curExposure':`curSex'.sex]
-
-                local curEstimate   = r(b)[1,1]
-                local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
-                local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
-                local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
-
-                local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
-                                        " ("                                            +   ///
-                                        `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
-                                        ", "                                            +   ///
-                                        `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
-                                        ")"
-
-                local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
-    
-                local curCol = char(66+`curSex')
-                putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
-            }       
-        }
-
-
-        ********************************************************************************
-        ** Get amplitude and "ideal normalised acrophase values" for each subharmonic **
-        ********************************************************************************
-
-        foreach curExposure in acrophase24 acrophase12 acrophase8{
-
-            putexcel set "Results/6_jointAssociations.xlsx", sheet("`curExposure'_m`i'") modify
-            putexcel A`curRow' = ("`curOutcomeVar'")
-
-            estimates restore fullModel
-            margins, over(sex) eydx(`curExposure'_sin `curExposure'_cos) asobserved post
-
-            forvalues curSex = 0/1{
-
-                // Compute the amplitude: sqrt((sinCoeff)^2 + cosCoeff)^2)
-
-                nlcom sqrt((_b[`curExposure'_sin:`curSex'.sex])^2+(_b[`curExposure'_cos:`curSex'.sex])^2)
-
-                local curEstimate   = r(b)[1,1]
-                local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
-                local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
-                local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
-
-                local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
-                                        " ("                                            +   ///
-                                        `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
-                                        ", "                                            +   ///
-                                        `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
-                                        ")"
-
-                local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
-
-                local curCol = char(66+2*`curSex')
-                putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
-
-                // Compute the "ideal normalised acrophase value"
-                // This is a value from 0 to 1 indicating the relative time point on the current time period that maximises its effect on the current outcome
-                // For example, a value of "0.5" for "acrophase24" would indicate that a "acrophase24" of "12 hours" would maximise its effect on the current outcome.
-                // This should be interpretted based on the intended direction for the current outcome.  For example, maximising "insulin" would not be good in this context!
-                // In that example, finding the minimum would be desirable (which would just be the normalised valued + 0.5)
-
-                nlcom (cond(_b[`curExposure'_sin:`curSex'.sex]<0,2*_pi,0)+atan2(_b[`curExposure'_sin:`curSex'.sex], _b[`curExposure'_cos:`curSex'.sex]))*1/(2*_pi)
-
-                local curEstimate   = r(b)[1,1]
-                local curLB         = r(b)[1,1] + invnormal(0.025)*sqrt(r(V)[1,1])  
-                local curUB         = r(b)[1,1] + invnormal(0.975)*sqrt(r(V)[1,1])
-                local curPvalue     = 2*normal(-abs(r(b)[1,1]/sqrt(r(V)[1,1]))) 
-
-                local curEstimateCI =   `"`=trim("`: display %10.3f `curEstimate''")'"' +   ///
-                                        " ("                                            +   ///
-                                        `"`=trim("`: display %10.3f `curLB''")'"'       +   ///
-                                        ", "                                            +   ///
-                                        `"`=trim("`: display %10.3f `curUB''")'"'       +   ///
-                                        ")"
-
-                local curSigSymbol = cond(`curPvalue'<0.01,"**",cond(`curPvalue'<0.05,"*",""))
-
-                local curCol = char(67+2*`curSex')
-                putexcel `curCol'`curRow' = ("`curEstimateCI'`curSigSymbol'")
-
-            } 
-        }
-
-        */

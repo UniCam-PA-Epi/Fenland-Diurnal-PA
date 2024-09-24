@@ -13,6 +13,8 @@ version 17.0
 **  Uses a multi-start optimization approach to estimate the hour of maximum PAEE.
 **  Total PAEE is estimated as the average of marginal values computed at each hour within 24-hours.
 
+** Author: TG421 **
+
 
 ****************************************************************
 ** Define cosinor model specification for max hour estimation **

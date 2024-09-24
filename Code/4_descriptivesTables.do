@@ -9,8 +9,14 @@ frame change tempset
 
 // Define continuous and categorical variables
 
+// Convert J/min/kg to kJ/hour/kg
+replace totalPAEE_hat   = totalPAEE_hat   * 60/1000
+replace mesor_hat       = exp(mesor_hat)  * 60/1000
+
 #delimit ;
-local contVars  glucose120
+local contVars  mesor_hat
+                totalPAEE_hat
+                glucose120
                 insulin
                 leptin
                 nefa
