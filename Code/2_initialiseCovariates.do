@@ -1,3 +1,5 @@
+version 17.0
+
 ***************************
 ** Initialize covariates **
 ***************************
@@ -80,9 +82,19 @@ label values season seasonlab
 ** Marital Status **
 ********************
 
+/*
 gen marital_status = gq_marit_DER
 replace marital_status=6 if marital_status==-1 | marital_status==-8 | marital_status==. 
 label define marlab 1 "Single" 2 "Married/living as married" 3 "Widowed" 4 "Separated" 5 "Divorced" 6 "Missing/Unknown"
+label values marital_status marlab
+*/
+
+gen     marital_status = .
+replace marital_status = 1 if gq_marit_DER == 1
+replace marital_status = 2 if gq_marit_DER == 2
+replace marital_status = 3 if gq_marit_DER == 3 | gq_marit_DER == 4 | gq_marit_DER == 5
+replace marital_status = 4 if gq_marit_DER ==-1 | gq_marit_DER ==-8 | gq_marit_DER == .
+label define marlab 1 "Single" 2 "Married/living as married" 3 "Widowed/Separated/Divorced" 4 "Missing/Unknown"
 label values marital_status marlab
 
 
@@ -108,6 +120,7 @@ label values education edulab
 *****************
 ** Work Status **
 *****************
+
 
 gen work_status = 0
 replace work_status = 1 if Worktype == "1" 

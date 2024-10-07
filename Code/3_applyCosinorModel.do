@@ -92,10 +92,6 @@ mata
     }
 end
 
-
-
-
-
 capture confirm file "`rootPath'/cosinorEstimates.dta"
 
 if _rc != 0{

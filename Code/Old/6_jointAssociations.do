@@ -9,6 +9,112 @@ frame change tempset
 ** Initilaise analysis **
 *************************
 
+
+cap mata: mata drop shiftModel()
+mata
+    void shiftModel(real scalar todo            , 
+                    real vector b               , 
+                    real scalar amp24initial    , 
+                    real scalar amp12initial    , 
+                    real scalar amp8initial     , 
+                    real scalar acr8initial     , 
+                    real scalar mesorInitial    ,
+                    real scalar acr24target     ,
+                    real scalar acr12target     ,
+                    real scalar initialPAEE     ,
+                    val                         , 
+                    grad                        , 
+                    hess)
+    {   
+        
+        real scalar targetPAEE, i
+
+        targetPAEE = 0
+        for (i=1; i<=128; i++){
+            targetPAEE =    targetPAEE +
+                            exp(
+                            amp24initial:*cos((2:*pi():/24):*((24*i/128)-acr24target))   :+
+                            amp12initial:*cos((2:*pi():/12):*((24*i/128)-acr12target))   :+
+                            amp8initial:*cos((2:*pi():/8):*((24*i/128)-acr8initial))     :+
+                            (mesorInitial:+b[1])
+                            )
+        }
+
+        val = (targetPAEE:-initialPAEE):^2  
+
+    }
+end
+
+
+cap mata: mata drop estimateShift()
+mata
+    void estimateShift(real scalar amp24initial     , 
+                       real scalar amp12initial     , 
+                       real scalar amp8initial      , 
+                       real scalar acr24initial     , 
+                       real scalar acr12initial     , 
+                       real scalar acr8initial      , 
+                       real scalar mesorInitial     ,
+                       real scalar acr24target      ,
+                       real scalar acr12target      
+                       )
+    {
+
+        
+        transmorphic S
+        vector bh
+        real scalar initialPAEE, i
+
+        initialPAEE = 0
+        for (i=1; i<=128; i++){
+            initialPAEE =   initialPAEE +
+                            exp(
+                            amp24initial:*cos((2:*pi():/24):*((24*i/128)-acr24initial))  :+
+                            amp12initial:*cos((2:*pi():/12):*((24*i/128)-acr12initial))  :+
+                            amp8initial:*cos((2:*pi():/8):*((24*i/128)-acr8initial))     :+
+                            mesorInitial
+                            )
+        }
+        
+        S  = optimize_init()
+        optimize_init_argument(S, 1, amp24initial) 
+        optimize_init_argument(S, 2, amp12initial)
+        optimize_init_argument(S, 3, amp8initial)
+        optimize_init_argument(S, 4, acr8initial)
+        optimize_init_argument(S, 5, mesorInitial)
+        optimize_init_argument(S, 6, acr24target)
+        optimize_init_argument(S, 7, acr12target)
+        optimize_init_argument(S, 8, initialPAEE)
+        optimize_init_evaluator(S, &shiftModel())
+        optimize_init_params(S, J(1,1,0))
+        optimize_init_which(S,"min")
+        bh = optimize(S)
+
+        st_local("mesorOffset" , strofreal(optimize_result_params(S)[1]))
+    
+
+    }
+end
+
+
+
+
+
+
+
+
+// Exclude participants for whom the cosinor model did not fit, those with insufficient wear time, and those without fat mass measurement.
+
+drop if sin24_p>0.05 & cos24_p>0.05 & sin12_p>0.05 & cos12_p>0.05 & sin8_p>0.05 & cos8_p>0.05
+
+drop if mesor_hat == .
+drop if amplitude24_hat == . | amplitude12_hat == . | amplitude8_hat == .
+drop if acrophase24_hat == . | acrophase12_hat == . | acrophase8_hat  == .
+
+drop if P_Pwear_consolidated<72
+drop if fatMass == .
+drop if fatFreeMass == .
+
 drop *_se *_lb *_ub *_p
 rename *_hat *
 
@@ -27,7 +133,8 @@ gen acrophase8_sin  = sin(acrophase8*2*_pi/8)
 gen acrophase8_cos  = cos(acrophase8*2*_pi/8)
 
 // Convert J/min/kg to kJ/hour/kg
-//replace totalPAEE   = totalPAEE  * 60/1000
+
+replace totalPAEE   = totalPAEE  * 60/1000
 
 ****************************************************************************************
 ** Outcome variables, continuous control variables, and categorical control variables **
@@ -97,6 +204,18 @@ forvalues i = 1/2{
 
 }
 
+
+egen sin24_std = std(sin24)
+egen cos24_std = std(cos24)
+egen sin12_std = std(sin12)
+egen cos12_std = std(cos12)
+egen sin8_std  = std(sin8)
+egen cos8_std  = std(cos8)
+egen mesor_std  = std(mesor)
+
+cluster kmeans sin24_std cos24_std sin12_std cos12_std sin8_std cos8_std mesor_std, k(7) gen(kGroup) measure(L2)
+
+drop *_std
 
 ********************************************************************************
 ** Begin analysis loop, looping through each outcome variable and model level **
@@ -187,6 +306,7 @@ qui foreach curOutcomeVar of local outcomeVars{
                             c.acrophase8_sin#c.acrophase12_cos
                             c.acrophase8_sin#c.acrophase8_cos
                             )
+                            
                             (
                             i.sex#c.amplitude24#c.amplitude12
                             i.sex#c.amplitude24#c.amplitude8
@@ -205,6 +325,7 @@ qui foreach curOutcomeVar of local outcomeVars{
                             i.sex#c.acrophase8_sin#c.acrophase12_cos
                             i.sex#c.acrophase8_sin#c.acrophase8_cos
                             )
+                            
                             if
                             `curOutcomeVar' != .         
                             ,
@@ -250,50 +371,11 @@ qui foreach curOutcomeVar of local outcomeVars{
 
 
 
-
-        local marginsList
-        su mesor 
-        local mesor_kAll = r(mean)
-        
-        noisi foreach p in 24 12 8{
-
-            su sin`p' 
-            local sin`p'_mean = r(mean)
-
-            su cos`p'
-            local cos`p'_mean = r(mean)
-
-            local amp`p'_kAll = sqrt((`sin`p'_mean')^2+(`cos`p'_mean')^2)
-            local acr`p'_kAll = cond((`sin`p'_mean')<0,`p',0) + atan2((`sin`p'_mean'),(`cos`p'_mean'))*`p'/(2*_pi)
-                
-        }
-
-        local marginsList `marginsList' at(
-        local marginsList `marginsList' amplitude24=`amp24_kAll'
-        local marginsList `marginsList' amplitude12=`amp12_kAll'
-        local marginsList `marginsList' amplitude8=`amp8_kAll'
-        local marginsList `marginsList' mesor=`mesor_kAll'
-        local marginsList `marginsList' acrophase24_sin=(`=sin(`acr24_kAll'*2*_pi/24)')
-        local marginsList `marginsList' acrophase24_cos=(`=cos(`acr24_kAll'*2*_pi/24)')
-        local marginsList `marginsList' acrophase12_sin=(`=sin(`acr12_kAll'*2*_pi/12)')
-        local marginsList `marginsList' acrophase12_cos=(`=cos(`acr12_kAll'*2*_pi/12)')
-        local marginsList `marginsList' acrophase8_sin=(`=sin(`acr8_kAll'*2*_pi/8)')
-        local marginsList `marginsList' acrophase8_cos=(`=cos(`acr8_kAll'*2*_pi/8)')
-        local marginsList `marginsList' ) 
-
-
-        noisi margins, over(sex) `marginsList' asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")')
-        local curRef_s0 = r(b)[1,1]
-        local curRef_s1 = r(b)[1,2]
-
-
-
-
         local marginsList
         forvalues k = 1/7{
 
             su mesor if kGroup == `k'
-            local mesor_k`k' = r(mean)
+            local mesorInitial = r(mean)
             
             noisi foreach p in 24 12 8{
 
@@ -303,58 +385,32 @@ qui foreach curOutcomeVar of local outcomeVars{
                 su cos`p' if  kGroup == `k'
                 local cos`p'_mean = r(mean)
 
-                local amp`p'_k`k' = sqrt((`sin`p'_mean')^2+(`cos`p'_mean')^2)
-                local acr`p'_k`k' = cond((`sin`p'_mean')<0,`p',0) + atan2((`sin`p'_mean'),(`cos`p'_mean'))*`p'/(2*_pi)
+                local amp`p'initial = sqrt((`sin`p'_mean')^2+(`cos`p'_mean')^2)
+                local acr`p'initial = cond((`sin`p'_mean')<0,`p',0) + atan2((`sin`p'_mean'),(`cos`p'_mean'))*`p'/(2*_pi)
                     
+                noisi di `amp`p'initial'
+                noisi di `acr`p'initial'
             }
 
 
             local marginsList `marginsList' at(
-            local marginsList `marginsList' amplitude24=`amp24_k`k''
-            local marginsList `marginsList' amplitude12=`amp12_k`k''
-            local marginsList `marginsList' amplitude8=`amp8_k`k''
-            local marginsList `marginsList' mesor=`mesor_k`k''
-            local marginsList `marginsList' acrophase24_sin=(`=sin(`acr24_k`k''*2*_pi/24)')
-            local marginsList `marginsList' acrophase24_cos=(`=cos(`acr24_k`k''*2*_pi/24)')
-            local marginsList `marginsList' acrophase12_sin=(`=sin(`acr12_k`k''*2*_pi/12)')
-            local marginsList `marginsList' acrophase12_cos=(`=cos(`acr12_k`k''*2*_pi/12)')
-            local marginsList `marginsList' acrophase8_sin=(`=sin(`acr8_k`k''*2*_pi/8)')
-            local marginsList `marginsList' acrophase8_cos=(`=cos(`acr8_k`k''*2*_pi/8)')
+            local marginsList `marginsList' amplitude24=`amp24initial'
+            local marginsList `marginsList' amplitude12=`amp12initial'
+            local marginsList `marginsList' amplitude8=`amp8initial'
+            local marginsList `marginsList' mesor=`mesorInitial'
+            local marginsList `marginsList' acrophase24_sin=(`=sin(`acr24initial'*2*_pi/24)')
+            local marginsList `marginsList' acrophase24_cos=(`=cos(`acr24initial'*2*_pi/24)')
+            local marginsList `marginsList' acrophase12_sin=(`=sin(`acr12initial'*2*_pi/12)')
+            local marginsList `marginsList' acrophase12_cos=(`=cos(`acr12initial'*2*_pi/12)')
+            local marginsList `marginsList' acrophase8_sin=(`=sin(`acr8initial'*2*_pi/8)')
+            local marginsList `marginsList' acrophase8_cos=(`=cos(`acr8initial'*2*_pi/8)')
             local marginsList `marginsList' ) 
 
         }
 
- 
-
         noisi margins, over(sex) `marginsList' asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")')
 
-            #delimit ;
-            marginsplot,    plotdimension(sex)
-                            title("")
-
-                            horizontal
-                            plotopts(connect(none))
-
-                            ytitle("k-means cluster")
-                            
-                            xlab(#4 , labsize(3) labcolor(black) angle(0) nogrid)
-                            ylab(1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "5" 7 "7" , labsize(3) labcolor(black) angle(0) nogrid)
-
-                            yscale(rev)
-
-                            graphregion(color(white%0))
-                            plotregion(color(white%0))
-                            legend(off)
-                            name(, replace)
-
-                            //xline(`curRef_s0')
-                            //xline(`curRef_s1')
-
-                        
-                            nolabels  
-                            ;
-
-            #delimit cr
+        marginsplot, plotdimension(sex)
 
         asdf
         
@@ -433,7 +489,7 @@ qui foreach curOutcomeVar of local outcomeVars{
             marginsplot,    
 
                             title("")
-                            xlab(1 "k1" 2 "k2" 3 "k3" 4 "k4" 5 "k5" 6 "k46" 7 "k7" , labsize(2.5) labcolor(black) angle(0) nogrid)
+                            xlab(   , labsize(2.5) labcolor(black) angle(0) nogrid)
                             ylab(#4 , labsize(2.5) labcolor(black) angle(0) nogrid)
 
                             graphregion(color(white%0))
