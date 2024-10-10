@@ -1,6 +1,6 @@
 version 17.0
 
-graph drop _all
+//graph drop _all
 
 frame copy dataset tempset
 frame change tempset
@@ -44,6 +44,7 @@ local outcomeVars   //glucose120
                     //mbpsys
                     //mbpdia
                     //crp
+                    //cmrs
                     ;
 
 local contCovVars   c.age
@@ -103,7 +104,6 @@ forvalues i = 1/2{
 ********************************************************************************
 
 
-
 local curRow = 2
 qui foreach curOutcomeVar of local outcomeVars{
 
@@ -127,7 +127,7 @@ qui foreach curOutcomeVar of local outcomeVars{
             `curOutcomeVar' != .         
             ,
             family(`=cond("`curOutcomeVar'"=="crp","igaussian","gaussian")')
-            link(log)
+            link(`=cond("`curOutcomeVar'"=="cmrs","identity","log")')
             ;
         estimates store m1  ;
 
@@ -290,7 +290,9 @@ qui foreach curOutcomeVar of local outcomeVars{
 
 
         local marginsList
-        forvalues k = 1/7{
+
+        levelsof kGroup, local(kVals)
+        foreach k of local kVals{
 
             su mesor if kGroup == `k'
             local mesor_k`k' = r(mean)
@@ -326,30 +328,34 @@ qui foreach curOutcomeVar of local outcomeVars{
 
  
 
-        noisi margins, over(sex) `marginsList' asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")')
+        noisi margins,  over(sex) `marginsList' asobserved predict(`=cond("`curOutcomeVar'"=="crp","xb","")')
 
             #delimit ;
-            marginsplot,    plotdimension(sex)
-                            title("")
-
-                            horizontal
+            mplotoffset,    offset(0.25)
+                            //horizontal
+                            plotdimension(sex)
                             plotopts(connect(none))
 
-                            ytitle("k-means cluster")
+                            plot1opts(color("214 40 40"))
+                            ci1opts(color("214 40 40"))
+
+                            plot2opts(color("0 47 73"))
+                            ci2opts(color("0 47 73"))
+
+                            //yscale(rev)
+
+                            title("")
+                            xtitle("")
                             
-                            xlab(#4 , labsize(3) labcolor(black) angle(0) nogrid)
-                            ylab(1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "5" 7 "7" , labsize(3) labcolor(black) angle(0) nogrid)
+                            ylab(#4                                 , labsize(3) labcolor(black) angle(0) nogrid)
+                            xlab(1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6", labsize(3) labcolor(black) angle(0) nogrid)
 
-                            yscale(rev)
+                            plotregion(color(white))
+                            graphregion(color(white))
 
-                            graphregion(color(white%0))
-                            plotregion(color(white%0))
                             legend(off)
+
                             name(, replace)
-
-                            //xline(`curRef_s0')
-                            //xline(`curRef_s1')
-
                         
                             nolabels  
                             ;

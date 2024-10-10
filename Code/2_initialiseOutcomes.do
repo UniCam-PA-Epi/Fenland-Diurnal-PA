@@ -74,10 +74,33 @@ gen glucose0 = cond(RepeatGlucose0<=Glucose0,RepeatGlucose0,Glucose0)
 gen glucose120 = cond(RepeatGlucose120<=Glucose120,RepeatGlucose120,Glucose120)
 
 
-
 **********
 ** CMRS **
 **********
+
+/*
+
+forvalues curSex = 0/1{
+
+    egen bp_std_`curSex'          = std(ln((mbpsys + mbpdia) / 2))  if sex == `curSex'
+    egen tri_std_`curSex'         = std(ln(triglyceride))           if sex == `curSex'
+
+    egen hdl_std_`curSex'         = std(ln(hdl))                    if sex == `curSex'
+    replace hdl_std_`curSex'      = -hdl_std_`curSex'               if sex == `curSex'
+
+    egen glucose120_std_`curSex'  = std(ln(glucose120))             if sex == `curSex'
+    egen waist_std_`curSex'       = std(ln(waist))                  if sex == `curSex'
+    egen missing_`curSex'         = rowmiss(*_std_`curSex')         if sex == `curSex'
+
+    egen cmrs_`curSex'            = rowmean(*_std_`curSex')         if sex == `curSex' & missing_`curSex' == 0 
+
+}
+
+egen cmrs = rowtotal(cmrs_0 cmrs_1) if cmrs_0 !=. | cmrs_1 !=.
+
+drop cmrs_0 cmrs_1 missing_0 missing_1 *_std_0 *_std_1
+
+*/
 
 egen bp_std         = std(ln((mbpsys + mbpdia) / 2))
 egen tri_std        = std(ln(triglyceride))
@@ -92,5 +115,8 @@ egen missing        = rowmiss(*_std)
 egen cmrs = rowmean(*_std) if missing == 0
 
 drop *_std missing
+
+
+
 
 
