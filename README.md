@@ -72,8 +72,8 @@ This section provides a brief overview of the functionality of each code file in
 
 * **Cosinor Analysis:**  Utilises multiple superimposed cosinor models to analyze the rhythmic patterns of PAEE throughout a 24-hour period. This involves fitting a gamma Generalized Linear Model (GLM) with a log link function to estimate parameters of the cyclical pattern, including:
     * **Mesor:** The average level of PAEE over the 24-hour cycle.
-    * **Amplitude:** The difference between the peak PAEE and the mesor, representing the strength of the diurnal rhythm.
-    * **Acrophase:** The time of day at which the peak PAEE occurs.
+    * **Amplitude:** The difference between the peak PAEE for a diurnal rhythm and the mesor.
+    * **Acrophase:** The time of day at which the peak of the diurnal rhythm occurs.
 * **Multi-frequency Rhythms:** The analysis estimates PAEE rhythms at multiple frequencies by jointly fitting cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows for the quantification ultradian rhythms in addition to the main 24-hour circadian rhythm.
 * **PAEE Metrics:**  In addition to the cosinor parameters, the code estimates:
     * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
