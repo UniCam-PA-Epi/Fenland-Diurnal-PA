@@ -112,11 +112,50 @@ This section provides a brief overview of the functionality of each code file in
 
 **[6_descriptivesTables.do](Code/6_descriptivesTables.do)**
 
+`6_descriptivesTables.do` generates the descriptive statistics tables for the manuscript by summarising study participant characteristics.
+
+* **Descriptive Statistics:** Calculates median and interquartile range (IQR) for continuous variables and frequencies (counts and percentages) for categorical variables.
+* **Variable Grouping:**  Presents descriptive statistics for the total sample and stratified by subgroups (sex and cluster groups derived from the k-means cluster analysis).
+* **Cosinor Parameter Transformation:**  Transforms circular acrophase variables (which represent time of day) to their sine and cosine components for calculation of median and IQR.
+* **Output:**  Exports the descriptive statistics to an [Excel file](Code/Tables/6_descriptiveTables.xlsx) with separate sheets for each subgroup analysis.
+<br> <br> 
+
 **[7_violinPlots.do](Code/7_violinPlots.do)**
+
+`7_violinPlots.do` creates violin plots to visualize the distributions of outcome variables across tertiles of total PAEE, stratified by sex.
+
+* **Violin Plots:** Uses the `violinplot` command (from the `violinplot` package) to generate violin plots, which display the density distribution of the outcome variables.
+* **Data Transformation:** Applies a natural logarithmic transformation (`ln`) to the outcome variables to improve visualisation and interpretation.
+* **PAEE Tertiles:** Divides the participants into tertiles based on their total PAEE (`totalPAEE_hat`), separately for males and females.
+* **Stratification:**  Generates separate violin plots for each sex, allowing for comparison of outcome distributions across PAEE tertiles within each sex.
+* **Output:** Saves the individual violin plots as graph files and combines them into a [single figure](Code/Figures/violinPlots.png).
+<br> <br> 
 
 **[8_cosinorFeatureAnalysis.do](Code/8_cosinorFeatureAnalysis.do)**
 
+`8_cosinorFeatureAnalysis.do` investigates the associations between cardiometabolic risk factors and features of the multi-component cosinor model, using a nested GLM approach with predictions at shifted PAEE profiles.
+
+* **Cosinor Component Decomposition:** Decomposes the circular acrophase variables into sine and cosine components for appropriate inclusion in linear models.
+* **Nested GLMs:**  Constructs and fits nested generalized linear models (GLMs) with different sets of covariates to assess the contribution of various predictors to the outcome variables. This includes baseline characteristics, body composition measures, and interactions between cosinor features (mesor, amplitude, acrophase) and other covariates.
+* **Model Evaluation:**  Uses likelihood ratio tests to evaluate the significance of adding different blocks of predictors to the model.
+* **Predicted Outcome Curves:** Generates predicted outcome values for time-shifted PAEE profiles by systematically adjusting the acrophase of each cosinor component (24h, 12h, 8h). This allows for visualization of how shifting the timing of PAEE affects the predicted outcomes.
+* **Visualization:**  Creates plots of the predicted outcome curves, stratified by sex, to illustrate the impact of shifting the PAEE profile on each outcome.
+* **Model Diagnostics:**  Saves the estimated model parameters and results of likelihood ratio tests to an [Excel file](Code/Tables/8_cosinorFeatureAnalysis.xlsx).
+* **Outcome-Specific Models:** Adapts the GLM family (Gaussian or inverse-Gaussian) and link function (log or identity) based on the characteristics of each outcome variable.
+<br> <br> 
+
 **[9_totalPAEEAnalysis.do](Code/9_totalPAEEAnalysis.do)**
+
+`9_totalPAEEAnalysis.do` examines the associations between total PAEE and cardiometabolic risk factors using GLMs and generates predicted outcome curves across the range of total PAEE values.
+
+* **Data Transformation:** Transforms total PAEE from J/min/kg to kJ/hour/kg for easier interpretation.
+* **GLMs:** Fits generalized linear models (GLMs) to assess the relationship between total PAEE and each outcome variable. The models include total PAEE, its quadratic term, and interactions with sex, along with baseline characteristics and body composition measures as covariates.
+* **Model Evaluation:**  Performs likelihood ratio tests to compare the full model (including total PAEE and its interactions) to a base model with only baseline covariates.
+* **Predicted Outcome Curves:**  Generates predicted outcome values across a range of total PAEE values (from 20 to 100 kJ/hour/kg) to visualize the relationship between total PAEE and each outcome.
+* **Visualization:**  Creates plots of the predicted outcome curves, stratified by sex, to illustrate the impact of different total PAEE levels on the outcomes.
+* **Model Diagnostics:** Saves the estimated model parameters and results of likelihood ratio tests to an [Excel file](Code/Tables/9_totalPAEEAnalysis.xlsx).
+* **Outcome-Specific Models:**  Adapts the GLM family (Gaussian or inverse-Gaussian) and link function (log or identity) based on the characteristics of each outcome variable.
+<br> <br> 
 
 ## Data Availability
 
