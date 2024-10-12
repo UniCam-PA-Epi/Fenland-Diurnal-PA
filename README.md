@@ -120,7 +120,7 @@ This section provides a brief overview of the functionality of each code file in
 
 ## Data Availability
 
-The Fenland study dataset analysed in this research is not publicly available due to participant confidentiality and data sharing agreements. However, researchers can apply for access to the data through the Medical Research Council (MRC) Epidemiology Unit at the University of Cambridge. 
+The Fenland study dataset ais not publicly available due to participant confidentiality and data sharing agreements. However, researchers can apply for access to the data through the Medical Research Council (MRC) Epidemiology Unit at the University of Cambridge. 
 
 For more information on the data access process and to submit a data request, please visit the MRC Epidemiology Unit's data sharing webpage: [http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/](http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/)
 
