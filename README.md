@@ -74,7 +74,7 @@ This section provides a brief overview of the functionality of each code file in
     * **Mesor:** The average level of PAEE over the 24-hour cycle.
     * **Amplitude:** The difference between the peak PAEE and the mesor, representing the strength of the diurnal rhythm.
     * **Acrophase:** The time of day at which the peak PAEE occurs.
-* **Multi-frequency Rhythms:** The analysis explores PAEE rhythms at multiple frequencies by jointly fitting cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows for the identification of potential ultradian rhythms in addition to the main circadian rhythm.
+* **Multi-frequency Rhythms:** The analysis estimates PAEE rhythms at multiple frequencies by jointly fitting cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows for the quantification ultradian rhythms in addition to the main 24-hour circadian rhythm.
 * **PAEE Metrics:**  In addition to the cosinor parameters, the code estimates:
     * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
     * **Hour of Maximum PAEE:** The hour of the day when PAEE is highest.
