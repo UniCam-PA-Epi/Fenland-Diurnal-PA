@@ -1,9 +1,11 @@
 # Fenland-Diurnal-PA
-This repository houses code for the "Fenland Diurnal PA and Metabolic Risk" manuscript.
+
+This repository provides the Stata code used to conduct the analysis for the manuscript "Fenland Diurnal PA and Metabolic Risk."  The research examines how total physical activity energy expenditure and variations in physical activity throughout the day relate to metabolic health outcomes, such as blood glucose, insulin levels, and blood pressure, in participants from the Fenland cohort.
 
 ## Table of Contents
 * [Usage](#usage)
 * [Code File Descriptions](#code-file-descriptions)
+* [Data Availability](#data-availability)
 * [Contributing](#contributing)
 * [License](#license)
 * [Contact](#contact)
@@ -42,7 +44,7 @@ This do-file performs initial data preparation for the main covariates used in t
 This do-file prepares the outcome variables for analysis:
 
 * **Variable Renaming:**  As in the previous file, this step renames outcome variables from the Fenland dataset for simplicity.
-* **Outcome Variable Definitions:**  Creates the key outcome variables used in the analysis. These include:
+* **Outcome Variable Definitions:**  Creates the outcome variables used in the analysis. These include:
     * **Metabolic Measures:** 
         * `glucose120`: 2-hour glucose 
         * `insulin`: Fasting insulin 
@@ -71,7 +73,57 @@ This do-file applies a cosinor model to analyse diurnal patterns in physical act
     * **Total 24-hour PAEE:** The average total PAEE over a 24-hour period.
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
 
+**4. `4_applyExclusions.do`**
 
-* ## License
+This do-file applies exclusion criteria to the study sample for the main analysis. Participants are excluded based on the following criteria:
+
+* **Cosinor Model Fit:**  Removes participants for whom the cosinor model did not adequately fit the PAEE data. This is determined by examining the p-values associated with the sine and cosine terms in the 24-hour, 12-hour, and 8-hour cycles.
+* **Insufficient Wear Time:**  Excludes participants with insufficient wear time of the accelerometer device.
+* **Missing Body Composition Data:**  Removes participants without measurements for fat mass and fat-free mass.
+
+**Specific Exclusion Rules:**
+
+* Participants are excluded if the p-values for all sine and cosine terms in the 24-hour, 12-hour, and 8-hour cosinor models are greater than 0.05.
+* Participants are excluded if the p-value for the total PAEE estimate is greater than 0.05.
+* Participants with missing values for any of the estimated cosinor parameters (mesor, amplitudes, acrophases) are excluded.
+* Participants with missing standard errors for the acrophases are excluded.
+* Participants with less than 72 hours of consolidated wear time are excluded.
+* Participants with missing fat mass or fat-free mass measurements are excluded.
+
+**5. `5_clusterAnalysis.do`**
+
+This do-file performs a k-means cluster analysis to group participants based on their diurnal PAEE patterns.
+
+* **K-means Clustering:** Performs k-means clustering on the standardised cosinor parameters using the L2 distance metric. The starting cluster centers are randomly assigned using a fixed seed.
+* **Standardisation:** Standardises the cosinor parameters (sine and cosine terms for 24-hour, 12-hour, and 8-hour cycles, and the mesor) to ensure that all variables contribute equally to the distance calculations in the k-means algorithm.
+* **Optimal k Determination:**  Determines the optimal number of clusters (k) using the elbow method with within-cluster sum of squares (WCSS) and linear splines regression.
+* **Cluster Visualisation:** Generates plots of the average PAEE profiles for each cluster.
+
+**6. `6_descriptivesTables.do`**
+
+**7. `7_violinPlots.do`**
+
+**8. `8_cosinorFeatureAnalysis.do`**
+
+**9. `9_totalPAEEAnalysis.do`**
+
+## Data Availability
+
+The Fenland study dataset analysed in this research is not publicly available due to participant confidentiality and data sharing agreements. However, researchers can apply for access to the data through the Medical Research Council (MRC) Epidemiology Unit at the University of Cambridge. 
+
+For more information on the data access process and to submit a data request, please visit the MRC Epidemiology Unit's data sharing webpage: [http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/](http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/)
+
+## Contributing
+
+This repository primarily serves as a resource for reproducing the analysis presented in the "Fenland Diurnal PA and Metabolic Risk" manuscript. However, we welcome feedback and suggestions for improvements! If you encounter any issues with the code or have suggestions for enhancements, please open an issue on the GitHub repository.
+
+## Contact
+
+**Tomas I. Gonzales, MRC Epidemiology Unit, University of Cambridge**
+
+* **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
+* **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
+
+## License
 
 The code contained in this repository is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
