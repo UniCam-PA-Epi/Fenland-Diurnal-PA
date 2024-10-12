@@ -25,7 +25,7 @@ This repository contains Stata code to reproduce the analysis for the "Fenland D
 
 * The `0_Main.do` file calls other do-files within the repository, so ensure all files are kept in the same directory.
 * The code expects the Fenland data to be in a specific format. Please refer to the manuscript or any accompanying documentation for details on data preparation.
-* PAEE data should have already been pre-processed and averaged to 24-hour periods.
+* The code assumes that the input PAEE data has been pre-processed and represents average daily values (i.e., averaged over 24-hour periods).
 * The code generates output files (e.g., tables, figures) in project code directory.
 
 ## Code File Descriptions
@@ -35,7 +35,7 @@ This section provides a brief overview of the functionality of each code file in
 
 **[0_Main.do](Code/0_Main.do)**
 
-`0_Main.do` executes the complete analysis pipeline for the "Fenland Diurnal PA and Metabolic Risk" manuscript.
+`0_Main.do` is the primary script that executes the complete analysis pipeline for the "Fenland Diurnal PA and Metabolic Risk" manuscript. Users can reproduce the full analysis by running this single file, which automatically calls and executes all other code files in the correct sequence.
 <br> <br> 
 
 **[1_initialiseCovariates.do](Code/1_initialiseCovariates.do)**
