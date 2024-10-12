@@ -1,5 +1,9 @@
 # Fenland-Diurnal-PA
 
+<p align="center">
+  <img src="Code/Legacy/FENST-logo-rgb-stacked-green-CROPSQUARE.png" alt="Logo for the Fenland study, showing a stylized windmill in Cambridge blue color.">
+</p>
+
 This repository provides the Stata code used to conduct the analysis for the manuscript "Fenland Diurnal PA and Metabolic Risk."  The research examines how total physical activity energy expenditure and variations in physical activity throughout the day relate to metabolic health outcomes, such as blood glucose, insulin levels, and blood pressure, in participants from the Fenland study population cohort.
 
 ## Table of Contents
