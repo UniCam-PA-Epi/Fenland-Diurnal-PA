@@ -203,9 +203,6 @@ forvalues curSex = 0/1{
     }
     mat catVector = catVector, 1
 
-
-
-
     foreach curVar of local contVars{
         mat `curVar' = .
     }
