@@ -31,17 +31,24 @@ This repository contains Stata code to reproduce the analysis for the "Fenland D
 ## Code File Descriptions
 
 This section provides a brief overview of the functionality of each code file in the analysis sequence.
+<br> <br> 
 
-**1. `1_initialiseCovariates.do`**
+**[0_Main.do](Code/0_Main.do)**
 
-This do-file performs initial data preparation for the main covariates used in the analysis, including:
+`0_Main.do` executes the complete analysis pipeline for the "Fenland Diurnal PA and Metabolic Risk" manuscript.
+<br> <br> 
+
+**[1_initialiseCovariates.do](Code/1_initialiseCovariates.do)**
+
+`1_initialiseCovariates.do` performs initial data preparation for the main covariates used in the analysis, including:
 
 * **Variable Renaming:**  Simplifies variable names from the Fenland dataset to improve clarity and consistency within the analysis code. 
 * **Categorical Variable Creation:**  Generates categorical variables for sociodemographic factors (e.g., age groups, education level) and anthropometric measures (e.g., BMI categories).
+<br> <br>
 
-**2. `2_initialiseOutcomes.do`**
+**[2_initialiseOutcomes.do](Code/2_initialiseOutcomes.do)**
 
-This do-file prepares the outcome variables for analysis:
+`2_initialiseOutcomes.do` prepares the outcome variables for analysis:
 
 * **Variable Renaming:**  As in the previous file, this step renames outcome variables from the Fenland dataset for simplicity.
 * **Outcome Variable Definitions:**  Creates the outcome variables used in the analysis. These include:
@@ -56,11 +63,12 @@ This do-file prepares the outcome variables for analysis:
     * **Cardiovascular Measures:**
         * `mbpsys`: Systolic blood pressure 
         * `mbpdia`: Diastolic blood pressure 
-        * `crp`: C-reactive protein
+        * `crp`: C-reactive protein     
+<br> 
 
-**3. `3_applyCosinorModel.do`**
+**[3_applyCosinorModel.do](Code/3_applyCosinorModel.do)**
 
-This do-file applies a cosinor model to analyse diurnal patterns in physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
+`3_applyCosinorModel.do` applies a cosinor model to analyse diurnal patterns in physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
 
 * **Cosinor Analysis:**  Utilises multiple superimposed cosinor models to analyze the rhythmic patterns of PAEE throughout a 24-hour period. This involves fitting a gamma Generalized Linear Model (GLM) with a log link function to estimate parameters of the cyclical pattern, including:
     * **Mesor:** The average level of PAEE over the 24-hour cycle.
@@ -72,10 +80,11 @@ This do-file applies a cosinor model to analyse diurnal patterns in physical act
     * **Hour of Maximum PAEE:** The hour of the day when PAEE is highest.
     * **Total 24-hour PAEE:** The average total PAEE over a 24-hour period.
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
+<br> <br>
 
-**4. `4_applyExclusions.do`**
+**[4_applyExclusions.do](Code/4_applyExclusions.do)**
 
-This do-file applies exclusion criteria to the study sample for the main analysis. Participants are excluded based on the following criteria:
+`4_applyExclusions.do` applies exclusion criteria to the study sample for the main analysis. Participants are excluded based on the following criteria:
 
 * **Cosinor Model Fit:**  Removes participants for whom the cosinor model did not adequately fit the PAEE data. This is determined by examining the p-values associated with the sine and cosine terms in the 24-hour, 12-hour, and 8-hour cycles.
 * **Insufficient Wear Time:**  Excludes participants with insufficient wear time of the accelerometer device.
@@ -89,23 +98,25 @@ This do-file applies exclusion criteria to the study sample for the main analysi
 * Participants with missing standard errors for the acrophases are excluded.
 * Participants with less than 72 hours of consolidated wear time are excluded.
 * Participants with missing fat mass or fat-free mass measurements are excluded.
+<br> <br> 
 
-**5. `5_clusterAnalysis.do`**
+**[5_clusterAnalysis.do](Code/5_clusterAnalysis.do)**
 
-This do-file performs a k-means cluster analysis to group participants based on their diurnal PAEE patterns.
+`5_clusterAnalysis.do` performs a k-means cluster analysis to group participants based on their diurnal PAEE patterns.
 
 * **K-means Clustering:** Performs k-means clustering on the standardised cosinor parameters using the L2 distance metric. The starting cluster centers are randomly assigned using a fixed seed.
 * **Standardisation:** Standardises the cosinor parameters (sine and cosine terms for 24-hour, 12-hour, and 8-hour cycles, and the mesor) to ensure that all variables contribute equally to the distance calculations in the k-means algorithm.
 * **Optimal k Determination:**  Determines the optimal number of clusters (k) using the elbow method with within-cluster sum of squares (WCSS) and linear splines regression.
 * **Cluster Visualisation:** Generates plots of the average PAEE profiles for each cluster.
+<br> <br> 
 
-**6. `6_descriptivesTables.do`**
+**[6_descriptivesTables.do](Code/6_descriptivesTables.do)**
 
-**7. `7_violinPlots.do`**
+**[7_violinPlots.do](Code/7_violinPlots.do)**
 
-**8. `8_cosinorFeatureAnalysis.do`**
+**[8_cosinorFeatureAnalysis.do](Code/8_cosinorFeatureAnalysis.do)**
 
-**9. `9_totalPAEEAnalysis.do`**
+**[9_totalPAEEAnalysis.do](Code/9_totalPAEEAnalysis.do)**
 
 ## Data Availability
 
@@ -117,9 +128,11 @@ For more information on the data access process and to submit a data request, pl
 
 This repository primarily serves as a resource for reproducing the analysis presented in the "Fenland Diurnal PA and Metabolic Risk" manuscript. However, we welcome feedback and suggestions for improvements! If you encounter any issues with the code or have suggestions for enhancements, please open an issue on the GitHub repository.
 
+If you are interested in collaborating on future research related to this project, please contact **Soren Brage** at soren.brage@mrc-epid.cam.ac.uk or **Tomas Gonzales** at tomas.gonzales@mrc-epid.cam.ac.uk.
+
 ## Contact
 
-**Tomas I. Gonzales, MRC Epidemiology Unit, University of Cambridge**
+**Tomas  Gonzales, MRC Epidemiology Unit, University of Cambridge**
 
 * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
 * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
