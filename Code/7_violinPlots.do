@@ -66,7 +66,6 @@ label define quarLab 1 "T1" 2 "T2" 3 "T3"
 label values paeeTx quarLab
 
 
-set graphics off
 local plotVarCount: word count `plotVars'
 
 forvalues i = 1/`plotVarCount'{
@@ -84,17 +83,25 @@ forvalues i = 1/`plotVarCount'{
                 ytitle("`curPlotXLab'")
                 ylab(#3,nogrid angle(0))
 
-                lcolors(navy maroon) 
+                lcolors("214 40 40" "0 47 73")
+                fcolors("214 40 40" "0 47 73")
+                medcolors("214 40 40" "0 47 73")
+
                 graphregion(color(white))
 
                 name(`curPlotVar', replace)
                 ;
     #delimit cr
-
+    
     gr_edit .xaxis1.style.editstyle majorstyle(tickstyle(textstyle(color(black)))) editcopy
     gr_edit .xaxis1.style.editstyle majorstyle(tickstyle(show_ticks(yes))) editcopy
 
+    capture mkdir Plots
+    capture mkdir Plots/violinPlots
+    graph save "`curPlotVar'" Plots/violinPlots/`curPlotVar'.gph , replace
+
 }
+
 
 #delimit ;
 
@@ -123,9 +130,11 @@ gr_edit .legend.Edit
 
 #delimit cr
 
-capture mkdir Results
-graph export "Results/5_violinPlots.png" , height(2000) width(2750) replace
+
+capture mkdir Figures
+graph export "Figures/violinPlots.png" , height(2000) width(2750) replace
 graph close _all
+graph drop _all
 
 frame change dataset
 frame drop tempset

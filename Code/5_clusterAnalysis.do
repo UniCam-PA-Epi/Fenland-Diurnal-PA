@@ -4,6 +4,7 @@ set seed 1234
 
 ** Control whether to run the optimal k selection process (1 = yes, 0 = no) **
 local getBestK = 0
+local plotClusters = 0
 
 
 ** Standardize variables for k-means clustering (improves L2 distance computation) **
@@ -86,7 +87,7 @@ if `getBestK' == 1{
     ** Clean up temporary variables **
     cluster drop _all
     drop kValue WCSS knot1 knot2 ll
-
+    
 }
 
 ** Use pre-determined k if getBestK is off. The above process yields k = 6 **
@@ -96,50 +97,58 @@ else local kSelected = 6
 cluster kmeans sin24_std cos24_std sin12_std cos12_std sin8_std cos8_std mesor_std, k(`kSelected') gen(kGroup) measure(L2) start(krandom(1234))
 drop *_std
 
-/*
 
-forvalues k = 1/`kSelected'{
 
-    foreach p in 24 12 8{
 
-        su sin`p'_hat if kGroup == `k'
-        local curSin`p' = r(mean)
-        su cos`p'_hat if kGroup == `k'
-        local curCos`p' = r(mean)
+if `plotClusters' == 1 {
 
-        local f`p' `curSin`p''*sin((2*_pi/`p')*x)+`curCos`p''*cos((2*_pi/`p')*x)
+    forvalues k = 1/`kSelected'{
+
+        foreach p in 24 12 8{
+
+            su sin`p'_hat if kGroup == `k'
+            local curSin`p' = r(mean)
+            su cos`p'_hat if kGroup == `k'
+            local curCos`p' = r(mean)
+
+            local f`p' `curSin`p''*sin((2*_pi/`p')*x)+`curCos`p''*cos((2*_pi/`p')*x)
+
+        }
+
+        su mesor_hat if kGroup == `k'
+        local curMesor = r(mean)
+
+        #delimit ;
+        twoway (func    y=exp(`f24'+`f12'+`f8'+`curMesor')
+                        ,
+                        recast(area) 
+                        lcolor("214 40  40 %0") 
+                        fcolor("214 40  40 %100") 
+                        
+                        title("k`k'",color(black) size(2.5)) 
+                        
+                        xtitle("Clocktime (hour)", size(2.5)) 
+                        range(0 24) 
+
+                        yscale(off) 
+
+                        ylab(,nogrid) 
+                        xlab(0 12 24, labsize(2.5)) 
+                        graphregion(color(white)) 
+                        name(k`k', replace)
+                )
+                ;
+        #delimit cr
 
     }
 
-    su mesor_hat if kGroup == `k'
-    local curMesor = r(mean)
+    graph combine k1 k2 k3 k4 k5 k6, row(2) col(3) ycommon xcommon imargin(1 1 1 1) graphregion(color(white) margin(t=26 b=26 l=42 r=42) ) name(kClusterPAEEProfiles, replace)
 
-    #delimit ;
-    twoway (func    y=exp(`f24'+`f12'+`f8'+`curMesor')
-                    ,
-                    recast(area) 
-                    lcolor("214 40  40 %0") 
-                    fcolor("214 40  40 %100") 
-                    
-                    title("k`k'",color(black) size(3)) 
-                    
-                    xtitle("") range(0 24) 
-
-                    yscale(off) 
-
-                    ylab(,nogrid) 
-                    xlab(0 12 24) 
-                    graphregion(color(white)) 
-                    name(g`k', replace)
-            )
-            ;
-    #delimit cr
-
+    capture mkdir Figures
+    graph export "Figures/kClusterPAEEProfiles.png" , height(2000) width(2750) replace
+    graph close k1 k2 k3 k4 k5 k6 kClusterPAEEProfiles
+    graph drop  k1 k2 k3 k4 k5 k6 kClusterPAEEProfiles
 
 }
 
-
-graph combine g1 g2 g3 g4 g5 g6,  row(1) col(6) ycommon xcommon imargin(1 1 1 1) graphregion(color(white) margin(t=38 b=38) ) name(gc, replace)
-
-*/
 
