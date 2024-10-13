@@ -20,7 +20,7 @@ This repository contains Stata code to reproduce the analysis for the "Fenland D
 
 **To run the code:**
 
-1. **Prerequisites:** Ensure you have Stata version 17.0 or above installed on your system and have access to the Fenland study dataset.
+1. **Prerequisites:** Ensure you have Stata SE version 17.0 or above installed on your system and have access to the Fenland study dataset.
 2. **Clone the repository:** `git clone https://github.com/UniCam-PA-Epi/Fenland-Diurnal-PA.git`
 3. **Navigate to the project code directory:** `cd Fenland-Diurnal-PA/Code`
 4. **Run the main do file:**  `stata do 0_Main.do "path to Fenland release"` (replace `"path to Fenland release"` with the actual file path to the Fenland study dataset)
