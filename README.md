@@ -159,7 +159,16 @@ This section provides a brief overview of the functionality of each code file in
 * **Visualization:**  Creates plots of the predicted outcome curves, stratified by sex, to illustrate the impact of different total PAEE levels on the outcomes.
 * **Model Diagnostics:** Saves the estimated model parameters and results of likelihood ratio tests to an [Excel file](Code/Tables/9_totalPAEEAnalysis.xlsx).
 * **Outcome-Specific Models:**  Adapts the GLM family (Gaussian or inverse-Gaussian) and link function (log or identity) based on the characteristics of each outcome variable.
-<br> <br> 
+<br> <br>
+
+**[10_panelPlots.do](Code/10_panelPlots.do)**
+
+`10_panelPlots.do` creates panel plots by combining the individual outcome plots generated in the `8_cosinorFeatureAnalysis.do` and `9_totalPAEEAnalysis.do` scripts.
+
+* **Plot Combination:**  Combines the individual graphs produced in the previous analysis steps (`cosinorFeatureAnalysis` and `totalPAEEAnalysis`) for each outcome variable, cluster group (including the pooled sample), and model adjustment level.
+* **Panel Layout:** Arranges the combined plots into a 2x5 grid (2 rows, 5 columns), creating a panel figure for each combination of cluster group, analysis type, and model level.
+* **Output:** Exports the panel plots as PNG image files (`Code/Figures/<group>_<analysis>_<model>.png`).
+<br> <br>
 
 ## Data Availability
 
