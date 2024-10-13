@@ -20,7 +20,7 @@ This repository contains Stata code to reproduce the analysis for the "Fenland D
 
 **To run the code:**
 
-1. **Prerequisites:** Ensure you have Stata (at least version 17.0) installed on your system and have access to the Fenland study dataset.
+1. **Prerequisites:** Ensure you have Stata version 17.0 or above installed on your system and have access to the Fenland study dataset.
 2. **Clone the repository:** `git clone https://github.com/UniCam-PA-Epi/Fenland-Diurnal-PA.git`
 3. **Navigate to the project code directory:** `cd Fenland-Diurnal-PA/Code`
 4. **Run the main do file:**  `stata do 0_Main.do "path to Fenland release"` (replace `"path to Fenland release"` with the actual file path to the Fenland study dataset)
@@ -171,14 +171,19 @@ For more information on the data access process and to submit a data request, pl
 
 This repository primarily serves as a resource for reproducing the analysis presented in the "Fenland Diurnal PA and Metabolic Risk" manuscript. However, we welcome feedback and suggestions for improvements! If you encounter any issues with the code or have suggestions for enhancements, please open an issue on the GitHub repository.
 
-If you are interested in collaborating on future research related to this project, please contact **Soren Brage** at soren.brage@mrc-epid.cam.ac.uk or **Tomas Gonzales** at tomas.gonzales@mrc-epid.cam.ac.uk.
-
 ## Contact
 
-**Tomas  Gonzales, MRC Epidemiology Unit, University of Cambridge**
+If you have any questions, or if you are interested in collaborating on future research related to this project, please contact:
 
-* **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
-* **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
+  * **Tomas Gonzales, MRC Epidemiology Unit, University of Cambridge**
+
+    * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
+    * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
+
+  * **Soren Brage, MRC Epidemiology Unit, University of Cambridge**
+
+    * **Email:** soren.brage@mrc-epid.cam.ac.uk 
+    * **ORCID:** [https://orcid.org/0000-0002-1265-7355](https://orcid.org/0000-0002-1265-7355)
 
 ## License
 
