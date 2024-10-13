@@ -20,41 +20,45 @@ local outcomeVars   glucose120
 
 #delimit cr
 
-foreach curAnalysis in totalPAEEAnalysis cosinorFeatureAnalysis{
+// Loop through each analysis permutation, fetching plots from each, and construct panel figures.
 
-    foreach curModel in m1 m2{
+foreach curGroup in Pooled k1 k2 k3 k4 k5 k6{
 
-        local plotList
-        foreach curVar of local outcomeVars{
+    foreach curAnalysis in totalPAEEAnalysis cosinorFeatureAnalysis{
 
-            graph use Plots/`curAnalysis'/Pooled_`curVar'_`curModel'
-            local plotList `plotList' Pooled_`curVar'_`curModel'
+        foreach curModel in m1 m2{
+
+            local plotList
+            foreach curVar of local outcomeVars{
+
+                capture graph use Plots/`curAnalysis'/`curGroup'_`curVar'_`curModel'
+                local plotList `plotList' `curGroup'_`curVar'_`curModel'
+            }
+
+            #delimit ;
+
+            capture graph combine `plotList'
+                    , 
+                    row(2) 
+                    col(5) 
+                    imargin(1 1 1 1)  
+                    graphregion(color(white) margin(l=15 r=15 t=30 b=30))
+                    name(`curGroup'_`curAnalysis'_`curModel', replace)
+                    ;
+
+            #delimit cr
+            
+            if _rc == 0{
+
+                capture mkdir Figures
+                graph export "Figures/`curGroup'_`curAnalysis'_`curModel'.png" , height(2000) width(2750) replace
+                graph close `plotList' `curGroup'_`curAnalysis'_`curModel'
+                graph drop  `plotList' `curGroup'_`curAnalysis'_`curModel'
+
+            }
         }
-
-        #delimit ;
-
-        graph combine `plotList'
-                , 
-                row(2) 
-                col(5) 
-                imargin(1 1 1 1)  
-                graphregion(color(white) margin(l=5 r=5 t=20 b=20))
-                name(`curAnalysis'_`curModel', replace)
-                ;
-
-        #delimit cr
-
-        capture mkdir Figures
-        graph export "Figures/`curAnalysis'_`curModel'.png" , height(2000) width(2750) replace
-        graph close `plotList' `curAnalysis'_`curModel'
-        graph drop  `plotList' `curAnalysis'_`curModel'
-
     }
 }
-
-asdf
-
-
 
 frame change dataset
 frame drop tempset
