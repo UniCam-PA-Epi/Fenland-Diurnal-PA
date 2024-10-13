@@ -74,7 +74,7 @@ This section provides a brief overview of the functionality of each code file in
 
 `3_applyCosinorModel.do` applies a cosinor model to analyse diurnal patterns in individual-level physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
 
-* **Cosinor Model:** To quantify rhythmic patterns in PAEE throughout a 24-hour period, we use a multi-frequency cosinor model. This involves fitting a gamma Generalized Linear Model (GLM) with a log link function. PAEE data are strictly positive and often exhibit a skewed distribution with many small values and a few very large ones. A gamma GLM is well-suited for this type of data, providing a better statistical fit than a Gaussian (normal) distribution. The main features of the cosinor model are:
+* **Cosinor Model:** To quantify rhythmic patterns in PAEE throughout a 24-hour period, we use a multi-frequency cosinor model and a gamma Generalized Linear Model (GLM) with a log link function. PAEE data are strictly positive and often exhibit a skewed distribution with many small values and a few very large ones. A gamma GLM is well-suited for this type of data, providing a better statistical fit than a Gaussian (normal) distribution. The main features of the cosinor model are:
   * **Mesor ($M$):**  This relates to the average level of PAEE over the 24-hour cycle on the log scale.  
   * **Amplitude ($\alpha$):** This relates to the difference between the peak PAEE and the mesor on the log scale, representing the strength of the rhythm.
   * **Acrophase ($\phi$):** The time of day at which the peak of the rhythm occurs.
