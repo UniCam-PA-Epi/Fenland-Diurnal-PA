@@ -88,7 +88,7 @@ This section provides a brief overview of the functionality of each code file in
     * $f_{PAEE}(t) = \exp (f_{24}(t) + f_{12}(t) + f_{8}(t) + M)$
  
   where:
-  *  $t$ represents clock time in hours.
+  *  $t$ represents clock time in hours, ranging from 0 (midnight) to 23.
   *  $f_{24}(t)$, $f_{12}(t)$, $f_{8}(t)$ are cosinor models for the 24-hour, 12-hour, and 8-hour cycles.
   *  $\alpha_{24}$, $\alpha_{12}$, and $\alpha_{8}$ are the estimated amplitudes for the 24-hour, 12-hour, and 8-hour cycles, respectively.
   *  $\phi_{24}$, $\phi_{12}$, and $\phi_{8}$ are the estimated acrophases for the respective rhythms.
