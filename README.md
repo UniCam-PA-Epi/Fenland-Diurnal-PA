@@ -72,17 +72,36 @@ This section provides a brief overview of the functionality of each code file in
 
 **[3_applyCosinorModel.do](Code/3_applyCosinorModel.do)**
 
-`3_applyCosinorModel.do` applies a cosinor model to analyse diurnal patterns in physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
+`3_applyCosinorModel.do` applies a cosinor model to analyse diurnal patterns in individual-level physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
 
-* **Cosinor Analysis:**  Utilises multiple superimposed cosinor models to analyze the rhythmic patterns of PAEE throughout a 24-hour period. This involves fitting a gamma Generalized Linear Model (GLM) with a log link function to estimate parameters of the cyclical pattern, including:
-    * **Mesor:** The average level of PAEE over the 24-hour cycle.
-    * **Amplitude:** The difference between the peak PAEE for a diurnal rhythm and the mesor.
-    * **Acrophase:** The time of day at which the peak of the diurnal rhythm occurs.
-* **Multi-frequency Rhythms:** The analysis estimates PAEE rhythms at multiple frequencies by jointly fitting cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows for the quantification ultradian rhythms in addition to the main 24-hour circadian rhythm.
-* **PAEE Metrics:**  In addition to the cosinor parameters, the code estimates:
-    * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
-    * **Hour of Maximum PAEE:** The hour of the day when PAEE is highest.
-    * **Total 24-hour PAEE:** The average total PAEE over a 24-hour period.
+* **Cosinor Model:** A cosinor model is used to estimate rhythmic patterns in PAEE throughout a 24-hour period. We fit a gamma Generalized Linear Model (GLM) with a log link function. This approach is suitable for data with a skewed distribution, like PAEE, which often has many small values and a few very large values, and is strictly positive. From this model, we estimate the following parameters:
+
+    * **Mesor (M):**  This relates to the average level of PAEE over the 24-hour cycle on the log scale.  
+    * **Amplitude ($\alpha$):** This relates to the difference between the peak PAEE and the mesor on the log scale, representing the strength of the rhythm.
+    * **Acrophase ($\phi$):** The time of day at which the peak of the rhythm occurs.
+      
+* **Multi-frequency Rhythms:** To capture both circadian (24-hour) and ultradian (shorter than 24-hour) rhythms, we jointly fit cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows us to identify potential rhythms with different periods. The cosinor model is represented as:
+
+    * $f_{24}(t) = \alpha_{24} \cos (\frac{2 \pi}{24} (t - \phi_{24})$
+    * $f_{12}(t) = \alpha_{12} \cos (\frac{2 \pi}{12} (t - \phi_{12})$
+    * $f_{8}(t) = \alpha_{8} \cos (\frac{2 \pi}{8} (t - \phi_{8})$    
+    * $f_{PAEE}(t) = \exp (f_{24}(t) + f_{12}(t) + f_{8}(t) + M)$
+
+  where:
+  *  $t$ represents clock time in hours.
+  *  $f_{24}(t)$, $f_{12}(t)$, $f_{8}(t)$ are cosinor models for the 24-hour, 12-hour, and 8-hour cycles.
+  *  $\alpha_{24}$, $\alpha_{12}$, and $\alpha_{8}$ are the amplitudes for the 24-hour, 12-hour, and 8-hour cycles, respectively.
+  *  $\phi_{24}$, $\phi_{12}$, and $\phi_{8}$ are the acrophases for the respective rhythms.
+  *  $f_{PAEE}(t)$ is the combined model representing superimposition and exponentiation of the cosinor models to produce a PAEE profile. The exponentiation, incorporating the mesor ($M$), ensures that the predicted PAEE values are always positive and allows for the modeling of varying average levels of PAEE.
+
+  **Important Note:** Due to the log link function, the mesor and amplitude values reflect the patterns on the logarithm of PAEE prior to exponentiation.
+
+* **Additional PAEE Metrics:** In addition to the cosinor parameters, the code also estimates:
+  
+  * **Total 24-hour PAEE:** The average total PAEE over a 24-hour period.
+  * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
+  * **Hour of Maximum PAEE:** The hour of the day when PAEE is at its peak.
+  
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
 <br> <br>
 
