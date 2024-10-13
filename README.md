@@ -74,36 +74,40 @@ This section provides a brief overview of the functionality of each code file in
 
 `3_applyCosinorModel.do` applies a cosinor model to analyse diurnal patterns in individual-level physical activity energy expenditure (PAEE) collected over approximately 6 days of continuous monitoring.
 
-* **Cosinor Model:** A cosinor model is used to estimate rhythmic patterns in PAEE throughout a 24-hour period. We fit a gamma Generalized Linear Model (GLM) with a log link function. This approach is suitable for data with a skewed distribution, like PAEE, which often has many small values and a few very large values, and is strictly positive. From this model, we estimate the following parameters:
+* **Cosinor Model:** To quantify rhythmic patterns in PAEE throughout a 24-hour period, we use a multi-frequency cosinor model. This involves fitting a gamma Generalized Linear Model (GLM) with a log link function. PAEE data are strictly positive and often exhibit a skewed distribution with many small values and a few very large ones. A gamma GLM is well-suited for this type of data, providing a better statistical fit than a Gaussian (normal) distribution. The main features of the cosinor model are:
+  * **Mesor ($M$):**  This relates to the average level of PAEE over the 24-hour cycle on the log scale.  
+  * **Amplitude ($\alpha$):** This relates to the difference between the peak PAEE and the mesor on the log scale, representing the strength of the rhythm.
+  * **Acrophase ($\phi$):** The time of day at which the peak of the rhythm occurs.
+    
+  **Important Note:** Due to the log link function, the mesor and amplitude values reflect the patterns on the logarithm of PAEE prior to exponentiation.
 
-    * **Mesor (M):**  This relates to the average level of PAEE over the 24-hour cycle on the log scale.  
-    * **Amplitude ($\alpha$):** This relates to the difference between the peak PAEE and the mesor on the log scale, representing the strength of the rhythm.
-    * **Acrophase ($\phi$):** The time of day at which the peak of the rhythm occurs.
-      
-* **Multi-frequency Rhythms:** To capture both circadian (24-hour) and ultradian (shorter than 24-hour) rhythms, we jointly fit cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows us to identify potential rhythms with different periods. The cosinor model is represented as:
-
+* **Multi-frequency Rhythms:** To capture both circadian (24-hour) and ultradian (shorter than 24-hour) rhythms, we jointly fit cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows us to identify potential rhythms with different periods. The combined cosinor model is represented as:
     * $f_{24}(t) = \alpha_{24} \cos (\frac{2 \pi}{24} (t - \phi_{24})$
     * $f_{12}(t) = \alpha_{12} \cos (\frac{2 \pi}{12} (t - \phi_{12})$
     * $f_{8}(t) = \alpha_{8} \cos (\frac{2 \pi}{8} (t - \phi_{8})$    
     * $f_{PAEE}(t) = \exp (f_{24}(t) + f_{12}(t) + f_{8}(t) + M)$
-
+ 
   where:
   *  $t$ represents clock time in hours.
   *  $f_{24}(t)$, $f_{12}(t)$, $f_{8}(t)$ are cosinor models for the 24-hour, 12-hour, and 8-hour cycles.
-  *  $\alpha_{24}$, $\alpha_{12}$, and $\alpha_{8}$ are the amplitudes for the 24-hour, 12-hour, and 8-hour cycles, respectively.
-  *  $\phi_{24}$, $\phi_{12}$, and $\phi_{8}$ are the acrophases for the respective rhythms.
-  *  $f_{PAEE}(t)$ is the combined model representing superimposition and exponentiation of the cosinor models to produce a PAEE profile. The exponentiation, incorporating the mesor ($M$), ensures that the predicted PAEE values are always positive and allows for the modeling of varying average levels of PAEE.
-
-  **Important Note:** Due to the log link function, the mesor and amplitude values reflect the patterns on the logarithm of PAEE prior to exponentiation.
+  *  $\alpha_{24}$, $\alpha_{12}$, and $\alpha_{8}$ are the estimated amplitudes for the 24-hour, 12-hour, and 8-hour cycles, respectively.
+  *  $\phi_{24}$, $\phi_{12}$, and $\phi_{8}$ are the estimated acrophases for the respective rhythms.
+  *  $f_{PAEE}(t)$ is the combined model representing superimposition and exponentiation of the cosinor models to produce a PAEE profile. The exponentiation, incorporating the estimated mesor value ($M$), ensures that the predicted PAEE values are always positive and allows for the modeling of varying average levels of PAEE.
 
 * **Additional PAEE Metrics:** In addition to the cosinor parameters, the code also estimates:
   
   * **Total 24-hour PAEE:** The average total PAEE over a 24-hour period.
   * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
   * **Hour of Maximum PAEE:** The hour of the day when PAEE is at its peak.
-  
+   
+* **Stata Implementation:** The Stata command used to fit this multi-frequency cosinor model is: `glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8 [aw=pwear_hour], family(gamma) link(log)`. In this model:
+
+  * `paee_hour` represents the PAEE level for a given hour.
+  * `sin24`, `cos24`, `sin12`, `cos12`, `sin8`, and `cos8` are the sine and cosine transformations of the 24-hour clocktime values. These transformations convert the angular hour data into Cartesian coordinates, allowing the cyclical patterns to be modelled using a linear framework.
+  * `pwear_hour` is the probability that an activity monitor was worn in a given hour, which is used as an analytic weight to account for potential variations in wear time.
+
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
-<br> <br>
+<br><br>
 
 **[4_applyExclusions.do](Code/4_applyExclusions.do)**
 
