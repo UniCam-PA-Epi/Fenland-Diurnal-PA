@@ -106,6 +106,8 @@ This section provides a brief overview of the functionality of each code file in
   * `sin24`, `cos24`, `sin12`, `cos12`, `sin8`, and `cos8` are the sine and cosine transformations of the 24-hour clocktime values. These transformations convert the angular hour data into Cartesian coordinates, allowing the cyclical patterns to be modelled using a linear framework.
   * `pwear_hour` is the probability that an activity monitor was worn in a given hour, which is used as an analytic weight to account for potential variations in wear time.
 
+  Subsequently, acrophase values for each rhythm are estimated using the following Stata command: ``nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi)``. Amplitude values are estimated using: ``nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)``. ``sin`p'`` and ``cos`p'`` are parameter estimates for each `p` in `24 12 8`.
+  
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
 <br><br>
 
@@ -134,12 +136,8 @@ This section provides a brief overview of the functionality of each code file in
 * **K-means Clustering:** Performs k-means clustering on the standardised cosinor parameters using the L2 distance metric. The starting cluster centers are randomly assigned using a fixed seed.
 * **Standardisation:** Standardises the cosinor parameters (sine and cosine terms for 24-hour, 12-hour, and 8-hour cycles, and the mesor) to ensure that all variables contribute equally to the distance calculations in the k-means algorithm.
 * **Optimal k Determination:**  Determines the optimal number of clusters (k) using the elbow method with within-cluster sum of squares (WCSS) and linear splines regression.
-* **Cluster Visualisation:** Generates plots of the average PAEE profiles for each cluster. A panel plot of the PAEE profiles is show below:
-
-<p align="center">
-  <img src="Code/Figures/kClusterPAEEProfiles.png" alt="A panel figure of PAEE profiles by k-means clusters.">
-</p>
-<br><br> 
+* **Cluster Visualisation:** Generates a [panel figure](Code/Figures/kClusterPAEEProfiles.png) of the average PAEE profiles for each cluster.
+<br> <br> 
 
 **[6_descriptivesTables.do](Code/6_descriptivesTables.do)**
 
@@ -159,12 +157,8 @@ This section provides a brief overview of the functionality of each code file in
 * **Data Transformation:** Applies a natural logarithmic transformation (`ln`) to the outcome variables to improve visualisation and interpretation.
 * **PAEE Tertiles:** Divides the participants into tertiles based on their total PAEE (`totalPAEE_hat`), separately for males and females.
 * **Stratification:**  Generates separate violin plots for each sex, allowing for comparison of outcome distributions across PAEE tertiles within each sex.
-* **Output:** Saves the individual violin plots as graph files and combines them into a [single figure](Code/Figures/violinPlots.png), shown below:
-
-<p align="center">
-  <img src="Code/Figures/violinPlots.png" alt="A panel figure of violin plots showing the distributions of various cardiometobolic risk factors by sex and PAEE tertiles.">
-</p>
-<br><br> 
+* **Output:** Saves the individual violin plots as graph files and combines them into a [single figure](Code/Figures/violinPlots.png).
+<br> <br> 
 
 **[8_cosinorFeatureAnalysis.do](Code/8_cosinorFeatureAnalysis.do)**
 
