@@ -218,7 +218,7 @@ If you have any questions, or if you are interested in collaborating on future r
     * **Email:** soren.brage@mrc-epid.cam.ac.uk 
     * **ORCID:** [https://orcid.org/0000-0002-1265-7355](https://orcid.org/0000-0002-1265-7355)
       
-  * **Philip Lews, Institute & Policlinic for Occupational Medicine, University of Cologne**
+  * **Philip Lewis, Institute & Policlinic for Occupational Medicine, University of Cologne**
     * **Email:** philip.lewis@uk-koeln.de
     * **ORCID:** [https://orcid.org/0000-0002-5881-6032](https://orcid.org/0000-0002-5881-6032)
     
