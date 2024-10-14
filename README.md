@@ -57,17 +57,18 @@ This section provides a brief overview of the functionality of each code file in
 * **Variable Renaming:**  As in the previous file, this step renames outcome variables from the Fenland dataset for simplicity.
 * **Outcome Variable Definitions:**  Creates the outcome variables used in the analysis. These include:
     * **Metabolic Measures:** 
-        * `glucose120`: 2-hour glucose 
-        * `insulin`: Fasting insulin 
-        * `leptin`: Blood leptin 
-        * `nefa`: Non-esterified fatty acids 
-        * `adiponectin`: Blood adiponectin 
-        * `ldl`: Low-density lipoprotein cholesterol 
-        * `hdl`: High-density lipoprotein cholesterol 
+        * `glucose120`: 2-hour glucose (mmol/L)
+        * `insulin`: Fasting insulin (pmol/L)
+        * `leptin`: Leptin (ng/ml) 
+        * `nefa`: Non-esterified fatty acids (μmol/L)
+        * `adiponectin`: Adiponectin (μg/ml)
+        * `ldl`: Low-density lipoprotein cholesterol (mmol/L)
+        * `hdl`: High-density lipoprotein cholesterol (mmol/L)
     * **Cardiovascular Measures:**
-        * `mbpsys`: Systolic blood pressure 
-        * `mbpdia`: Diastolic blood pressure 
-        * `crp`: C-reactive protein     
+        * `mbpsys`: Systolic blood pressure (mmHg)
+        * `mbpdia`: Diastolic blood pressure (mmHg)
+    * **Inflammatory Measures:**
+        * `crp`: C-reactive protein (mg/L)     
 <br> 
 
 **[3_applyCosinorModel.do](Code/3_applyCosinorModel.do)**
