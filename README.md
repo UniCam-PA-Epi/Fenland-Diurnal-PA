@@ -106,7 +106,7 @@ This section provides a brief overview of the functionality of each code file in
   * `sin24`, `cos24`, `sin12`, `cos12`, `sin8`, and `cos8` are the sine and cosine transformations of the 24-hour clocktime values. These transformations convert the angular hour data into Cartesian coordinates, allowing the cyclical patterns to be modelled using a linear framework.
   * `pwear_hour` is the probability that an activity monitor was worn in a given hour, which is used as an analytic weight to account for potential variations in wear time.
 
-  Subsequently, acrophase values for each rhythm are estimated using the following Stata command: ``nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi)``. Amplitude values are estimated using: ``nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)``. ``sin`p'`` and ``cos`p'`` are parameter estimates for each `p` in `24 12 8`.
+  **Acrophase ($\phi$)** values for each rhythm are estimated using the following Stata command: ``nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi)``. **Amplitude ($\alpha$)** values are estimated using: ``nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)``. For these Stata commands, ``_b[`sin`p']`` and ``_b[cos`p']`` are parameter estimates from the multi-frequency cosinor model for each `p` value in `24 12 8`.
   
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
 <br><br>
@@ -209,15 +209,17 @@ This repository primarily serves as a resource for reproducing the analysis pres
 
 If you have any questions, or if you are interested in collaborating on future research related to this project, please contact:
 
-  * **Tomas Gonzales, MRC Epidemiology Unit, University of Cambridge**
-
-    * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
-    * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
-
   * **Soren Brage, MRC Epidemiology Unit, University of Cambridge**
-
     * **Email:** soren.brage@mrc-epid.cam.ac.uk 
     * **ORCID:** [https://orcid.org/0000-0002-1265-7355](https://orcid.org/0000-0002-1265-7355)
+      
+  * **Philip Lews, Institute & Policlinic for Occupational Medicine, University of Cologne**
+    * **Email:** philip.lewis@uk-koeln.de
+    * **ORCID:** [https://orcid.org/0000-0002-5881-6032](https://orcid.org/0000-0002-5881-6032)
+    
+  * **Tomas Gonzales, MRC Epidemiology Unit, University of Cambridge**
+    * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
+    * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
 
 ## License
 
