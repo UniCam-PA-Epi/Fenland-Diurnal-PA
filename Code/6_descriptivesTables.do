@@ -13,7 +13,9 @@ frame change tempset
 replace totalPAEE_hat   = totalPAEE_hat   * 60/1000
 
 #delimit ;
-local contVars  acrophase24_hat
+local contVars  age
+                bmi
+                acrophase24_hat
                 acrophase12_hat
                 acrophase8_hat
                 amplitude24_hat
