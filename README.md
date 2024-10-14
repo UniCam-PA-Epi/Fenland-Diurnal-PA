@@ -100,14 +100,18 @@ This section provides a brief overview of the functionality of each code file in
   * **Maximum Achieved PAEE:** The highest PAEE value within the 24-hour period.
   * **Hour of Maximum PAEE:** The hour of the day when PAEE is at its peak.
    
-* **Stata Implementation:** The Stata command used to fit this multi-frequency cosinor model is: `glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8 [aw=pwear_hour], family(gamma) link(log)`. In this model:
-
-  * `paee_hour` represents the PAEE level for a given hour.
-  * `sin24`, `cos24`, `sin12`, `cos12`, `sin8`, and `cos8` are the sine and cosine transformations of the 24-hour clocktime values. These transformations convert the angular hour data into Cartesian coordinates, allowing the cyclical patterns to be modelled using a linear framework.
-  * `pwear_hour` is the probability that an activity monitor was worn in a given hour, which is used as an analytic weight to account for potential variations in wear time.
-
-  **Acrophase ($\phi$)** values for each rhythm are estimated using the following Stata command: ``nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi)``. **Amplitude ($\alpha$)** values are estimated using: ``nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)``. For these Stata commands, ``_b[`sin`p']`` and ``_b[cos`p']`` are parameter estimates from the multi-frequency cosinor model for each `p` value in `24 12 8`.
-  
+* **Stata Implementation:** The Stata command used to fit this multi-frequency cosinor model is:
+  * `glm paee_hour sin24 cos24 sin12 cos12 sin8 cos8 [aw=pwear_hour], family(gamma) link(log)`. In this model:
+    * `paee_hour` represents the PAEE level for a given hour.
+    * `sin24`, `cos24`, `sin12`, `cos12`, `sin8`, and `cos8` are the sine and cosine transformations of the 24-hour clocktime values. These transformations convert the angular hour data into Cartesian coordinates, allowing the cyclical patterns to be modelled using a linear framework.
+    * `pwear_hour` is the probability that an activity monitor was worn in a given hour, which is used as an analytic weight to account for potential variations in wear time.
+      
+  * After using the multi-frequency cosinor model to estimate regression coefficients ``_b[`sin`p']`` and ``_b[cos`p']`` for each `p` value in `24 12 8`, the following cosinor model feautres are estimated for each `p`:
+    * **Amplitude ($\alpha$)** values for each rhythm ($\alpha_{24}$, $\alpha_{12}$, and $\alpha_{8}$) are estimated using the following Stata command:
+      * ``nlcom sqrt(_b[sin`p']^2+_b[cos`p']^2)``.  
+    * **Acrophase ($\phi$)** values for each rhythm ($\phi_{24}$, $\phi_{12}$, and $\phi_{8}$) are estimated using the following Stata command:
+      * ``nlcom cond(_b[sin`p']<0,`p',0) + atan2(_b[sin`p'],_b[cos`p'])*`p'/(2*_pi)``.
+    
 * **Outlier Removal:** An IQR-based method to remove outliers in the PAEE data is applied before fitting the cosinor model. 
 <br><br>
 
@@ -154,7 +158,7 @@ This section provides a brief overview of the functionality of each code file in
 `7_violinPlots.do` creates violin plots to visualize the distributions of outcome variables across tertiles of total PAEE, stratified by sex.
 
 * **Violin Plots:** Uses the `violinplot` command (from the `violinplot` package) to generate violin plots, which display the density distribution of the outcome variables.
-* **Data Transformation:** Applies a natural logarithmic transformation (`ln`) to the outcome variables to improve visualisation and interpretation.
+* **Data Transformation:** Applies a natural logarithmic transformation to the outcome variables to improve visualisation and interpretation.
 * **PAEE Tertiles:** Divides the participants into tertiles based on their total PAEE (`totalPAEE_hat`), separately for males and females.
 * **Stratification:**  Generates separate violin plots for each sex, allowing for comparison of outcome distributions across PAEE tertiles within each sex.
 * **Output:** Saves the individual violin plots as graph files and combines them into a [single figure](Code/Figures/violinPlots.png).
