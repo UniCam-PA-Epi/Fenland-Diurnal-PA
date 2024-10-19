@@ -7,12 +7,12 @@
 This repository provides the Stata code used to conduct the analysis for the manuscript "Fenland Diurnal PA and Metabolic Risk."  The research examines how total physical activity energy expenditure and variations in physical activity throughout the day relate to metabolic health risk factors, such as blood glucose, insulin levels, and blood pressure, in participants from the Fenland study population cohort.
 
 ## :open_book: Table of Contents
-* [Usage](#usage)
-* [Code File Descriptions](#code-file-descriptions)
-* [Data Availability](#data-availability)
-* [Contributing](#contributing)
-* [License](#license)
-* [Contact](#contact)
+* [Usage](#hammer_and_wrench-usage)
+* [Code File Descriptions](#bookmark_tabs-code-file-descriptions)
+* [Data Availability](#bar_chart-data-availability)
+* [Contributing](#raising_hand_woman-contributing)
+* [Contact](#telephone_receiver-contact)
+* [License](#balance_scale-license)
 
 ## :hammer_and_wrench: Usage
 
@@ -206,7 +206,7 @@ The Fenland study dataset is not publicly available due to participant confident
 
 For more information on the data access process and to submit a data request, please visit the MRC Epidemiology Unit's data sharing webpage: [http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/](http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/)
 
-## :raising_hand_woman::raising_hand_man: Contributing
+## :raising_hand_woman: Contributing
 
 This repository primarily serves as a resource for reproducing the analysis presented in the "Fenland Diurnal PA and Metabolic Risk" manuscript. However, we welcome feedback and suggestions for improvements! If you encounter any issues with the code or have suggestions for enhancements, please open an issue on the GitHub repository.
 
