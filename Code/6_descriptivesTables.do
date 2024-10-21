@@ -57,7 +57,17 @@ capture erase "Tables/6_descriptiveTables.xlsx"
 
 gen pooled = 0
 
-foreach curGroup in pooled sex kGroup{
+gen kGroupSexStrat = .
+forvalues curSex = 0/1{
+    forvalues curK = 1/6{
+
+        replace kGroupSexStrat = `curK' + 6*`curSex' if sex == `curSex' & kGroup == `curK'
+
+    }
+
+}
+
+foreach curGroup in pooled sex kGroup kGroupSexStrat{
 
     levelsof `curGroup', local(groupLevels)
 
@@ -168,6 +178,8 @@ foreach curGroup in pooled sex kGroup{
 
     }
 }
+
+asdf
 
 frame change dataset
 frame drop tempset
