@@ -6,15 +6,15 @@
 
 This repository provides the Stata code used to conduct the analysis for the manuscript "Fenland Diurnal PA and Metabolic Risk."  The research examines how total physical activity energy expenditure and variations in physical activity throughout the day relate to metabolic health risk factors, such as blood glucose, insulin levels, and blood pressure, in participants from the Fenland study population cohort.
 
-## Table of Contents
-* [Usage](#usage)
-* [Code File Descriptions](#code-file-descriptions)
-* [Data Availability](#data-availability)
-* [Contributing](#contributing)
-* [License](#license)
-* [Contact](#contact)
+## :open_book: Table of Contents
+* [Usage](#hammer_and_wrench-usage)
+* [Code File Descriptions](#bookmark_tabs-code-file-descriptions)
+* [Data Availability](#bar_chart-data-availability)
+* [Contributing](#raising_hand_woman-raising_hand_man-contributing)
+* [Contact](#telephone_receiver-contact)
+* [License](#balance_scale-license)
 
-## Usage
+## :hammer_and_wrench: Usage
 
 This repository contains Stata code to reproduce the analysis for the "Fenland Diurnal PA and Metabolic Risk" manuscript. The main analysis is conducted using the `0_Main.do` file. 
 
@@ -32,7 +32,7 @@ This repository contains Stata code to reproduce the analysis for the "Fenland D
 * The code assumes that the input PAEE data has been pre-processed and represents average daily values (i.e., averaged over 24-hour periods).
 * The code generates output files (e.g., tables, figures) in project code directory.
 
-## Code File Descriptions
+## :bookmark_tabs: Code File Descriptions
 
 This section provides a brief overview of the functionality of each code file in the analysis sequence.
 <br> <br> 
@@ -200,32 +200,36 @@ This section provides a brief overview of the functionality of each code file in
 * **Output:** Exports the panel plots as PNG image files (`Code/Figures/<group>_<analysis>_<model>.png`).
 <br> <br>
 
-## Data Availability
+## :bar_chart: Data Availability
 
-The Fenland study dataset ais not publicly available due to participant confidentiality and data sharing agreements. However, researchers can apply for access to the data through the Medical Research Council (MRC) Epidemiology Unit at the University of Cambridge. 
+The Fenland study dataset is not publicly available due to participant confidentiality and data sharing agreements. However, researchers can apply for access to the data through the Medical Research Council (MRC) Epidemiology Unit at the University of Cambridge. 
 
 For more information on the data access process and to submit a data request, please visit the MRC Epidemiology Unit's data sharing webpage: [http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/](http://www.mrc‐epid.cam.ac.uk/research/data‐sharing/)
 
-## Contributing
+## :raising_hand_woman: :raising_hand_man: Contributing
 
 This repository primarily serves as a resource for reproducing the analysis presented in the "Fenland Diurnal PA and Metabolic Risk" manuscript. However, we welcome feedback and suggestions for improvements! If you encounter any issues with the code or have suggestions for enhancements, please open an issue on the GitHub repository.
 
-## Contact
+## :telephone_receiver: Contact
 
 If you have any questions, or if you are interested in collaborating on future research related to this project, please contact:
 
-  * **Dr Soren Brage, MRC Epidemiology Unit, University of Cambridge, UK**
+  * **Dr Soren Brage, PhD**
+    * **Affiliation:** MRC Epidemiology Unit, University of Cambridge, UK
     * **Email:** soren.brage@mrc-epid.cam.ac.uk 
     * **ORCID:** [https://orcid.org/0000-0002-1265-7355](https://orcid.org/0000-0002-1265-7355)
-      
-  * **Dr Philip Lewis, Institute & Policlinic for Occupational Medicine, University Hospital of Cologne, Germany**
-    * **Email:** philip.lewis@uk-koeln.de
-    * **ORCID:** [https://orcid.org/0000-0002-5881-6032](https://orcid.org/0000-0002-5881-6032)
-    
-  * **Dr Tomas Gonzales, MRC Epidemiology Unit, University of Cambridge, UK**
+
+  * **Dr Tomas Gonzales, PhD**
+    * **Affiliation:** MRC Epidemiology Unit, University of Cambridge, UK
     * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
     * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
-
-## License
+      
+  * **Dr Philip Lewis, PhD**
+    * **Affiliation:** Institute & Policlinic for Occupational Medicine, University Hospital of Cologne, Germany 
+    * **Email:** philip.lewis@uk-koeln.de
+    * **ORCID:** [https://orcid.org/0000-0002-5881-6032](https://orcid.org/0000-0002-5881-6032)
+    * **Website:** [https://philiplewis.de/](https://philiplewis.de/)
+    
+## :balance_scale: License
 
 The code contained in this repository is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
