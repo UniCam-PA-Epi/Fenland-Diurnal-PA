@@ -232,4 +232,4 @@ If you have any questions, or if you are interested in collaborating on future r
     
 ## :balance_scale: License
 
-The code contained in this repository is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+The code contained in this repository is licensed under the Creative Commons Attribution ShareAlike 4.0 License - see the [LICENSE.md](LICENSE.md) file for details
