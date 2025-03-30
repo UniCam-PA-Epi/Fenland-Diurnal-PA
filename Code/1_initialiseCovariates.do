@@ -17,18 +17,30 @@ label values sex sexlab
 
 gen age = AgeAtTest_DM_Attended
 
-rename AGE_GROUP agecat
-label define agelab 1 "<45" 2 ">=45 & <55" 3 ">=55"
-label values agecat agelab
+rename AGE_GROUP agecat3
+label define agelab3 1 "<45" 2 ">=45 & <55" 3 ">=55", replace
+label values agecat3 agelab3
+
+gen agecat2 = .
+replace agecat2 = 1 if age <  50 & age != .
+replace agecat2 = 2 if age >= 50 & age != .
+label define agelab2 1 "<50" 2 ">=50", replace
+label values agecat2 agelab2
 
 *********
 ** BMI **
 *********
 
 rename BMI bmi
-rename BMI_GROUP bmicat
-label define bmilab 1 "Normal" 2 "Overweight" 3 "Obese"
-label values bmicat bmilab
+rename BMI_GROUP bmicat3
+label define bmilab3 1 "Normal" 2 "Overweight" 3 "Obese", replace
+label values bmicat3 bmilab3
+
+gen bmicat2 = .
+replace bmicat2 = 1 if bmicat3 == 1
+replace bmicat2 = 2 if bmicat3 == 2 | bmicat3 == 3
+label define bmilab2 1 "Normal" 2 "Overweight/Obese", replace
+label values bmicat2 bmilab2
 
 *********
 ** RHR **
@@ -45,22 +57,27 @@ drop rhr2
 ** Ethnicity **
 ***************
 
-gen ethnic = gq_eth_DER 
+gen ethnic3 = gq_eth_DER 
 
 
-replace ethnic = 0 if ethnic==1 | ethnic==2 | ethnic==3
-replace ethnic = 1 if ethnic !=0 & ethnic !=.
-replace ethnic = 2 if ethnic == .
+replace ethnic3 = 0 if ethnic3==1 | ethnic3==2 | ethnic3==3
+replace ethnic3 = 1 if ethnic3 !=0 & ethnic3 !=.
+replace ethnic3 = 2 if ethnic3 == .
 
-label define ethlab 0 "White" 1 "Non-white" 2 "Missing/Unknown"
-label values ethnic ethlab
+label define ethlab3 0 "White" 1 "Non-white" 2 "Missing/Unknown", replace
+label values ethnic3 ethlab3
+
+gen ethnic2 = .
+replace ethnic2 = 0 if ethnic3 == 0
+replace ethnic2 = 1 if ethnic3 == 1 | ethnic3 == 2
+label define ethlab2 0 "White" 1 "Non-white/Missing/Unknown", replace
+label values ethnic2 ethlab2
 
 ***************    
 ** Test Site **
 *************** 
 
 encode TestSite, gen(testsite)
-
 
 **************************************************
 ** Season: centred around solstices and equinox **
@@ -89,53 +106,74 @@ label define marlab 1 "Single" 2 "Married/living as married" 3 "Widowed" 4 "Sepa
 label values marital_status marlab
 */
 
-gen     marital_status = .
-replace marital_status = 1 if gq_marit_DER == 1
-replace marital_status = 2 if gq_marit_DER == 2
-replace marital_status = 3 if gq_marit_DER == 3 | gq_marit_DER == 4 | gq_marit_DER == 5
-replace marital_status = 4 if gq_marit_DER ==-1 | gq_marit_DER ==-8 | gq_marit_DER == .
-label define marlab 1 "Single" 2 "Married/living as married" 3 "Widowed/Separated/Divorced" 4 "Missing/Unknown"
-label values marital_status marlab
+gen     marital_status4 = .
+replace marital_status4 = 1 if gq_marit_DER == 1
+replace marital_status4 = 2 if gq_marit_DER == 2
+replace marital_status4 = 3 if gq_marit_DER == 3 | gq_marit_DER == 4 | gq_marit_DER == 5
+replace marital_status4 = 4 if gq_marit_DER ==-1 | gq_marit_DER ==-8 | gq_marit_DER == .
+label define marlab4 1 "Single" 2 "Married/living as married" 3 "Widowed/Separated/Divorced" 4 "Missing/Unknown", replace
+label values marital_status4 marlab4
 
+gen marital_status3 = . 
+replace marital_status3 = 1 if marital_status4 == 2
+replace marital_status3 = 2 if marital_status4 == 1 | marital_status4 == 3
+replace marital_status3 = 3 if marital_status4 == 4
+label define marlab3 1 "Married/living as married" 2 "Single/Widowed/Separated/Divorce" 3 "Missing/Unknown", replace
+label values marital_status3 marlab3
 
 ************
 ** Income **
 ************
 
-gen income = gq_income_DER
-replace income=4 if income==. | income==-7 | income==-1 
-label define incomelab 1 "<20k" 2 "20-40k" 3 ">40k" 4 "Missing/Unknown"
-label values income incomelab
+gen income4 = gq_income_DER
+replace income4=4 if income==. | income==-7 | income==-1 
+label define incomelab4 1 "<20k" 2 "20-40k" 3 ">40k" 4 "Missing/Unknown", replace
+label values income4 incomelab4
 
+gen income3 = .
+replace income3 = 1 if income4 == 3
+replace income3 = 2 if income4 == 1 | income4 == 2
+replace income3 = 3 if income4 == 4
+label define incomelab3 1 ">40k" 2 "<=40k" 3 "Missing/Unknown", replace
+label values income3 incomelab3
 
 ***************
 ** Education **
 ***************
 
-rename EDUCATION education
-replace education = 4 if education == .
-label define edulab 0 "None" 1 "Compulsory" 2 "Further" 3 "Higher" 4 "Missing/Unknown"
-label values education edulab
+rename EDUCATION education4
+replace education4 = 4 if education4 == .
+label define edulab4 0 "None" 1 "Compulsory" 2 "Further" 3 "Higher" 4 "Missing/Unknown", replace 
+label values education4 edulab4
+
+gen education3 = .
+replace education3 = 0 if education4 == 3
+replace education3 = 1 if education4 == 2
+replace education3 = 2 if education4 == 1 | education4 == 0
+replace education3 = 3 if education4 == 4
+label define edulab3 0 "Higher" 1 "Further" 2 "None/Compulsory" 3 "Missing/Unknown", replace 
+label values education3 edulab3
+
 
 *****************
 ** Work Status **
 *****************
 
 
-gen work_status = 0
-replace work_status = 1 if Worktype == "1" 
-replace work_status = 2 if Worktype == "2" 
-replace work_status = 3 if Worktype == "3" 
-replace work_status = 3 if Worktype == "4"
-replace work_status = 6 if Worktype == "-1" | Worktype == "(-10) N/A" | Worktype == "" | Worktype == "(-10) None" 
-replace work_status = 4 if Worktype == "-1" & gq_job_retired_DER == 2
-replace work_status = 5 if Worktype == "-1" & gq_job_unempl_DER == 2 
+gen work_status6 = 0
+replace work_status6 = 1 if Worktype == "1" 
+replace work_status6 = 2 if Worktype == "2" 
+replace work_status6 = 3 if Worktype == "3" 
+replace work_status6 = 3 if Worktype == "4"
+replace work_status6 = 6 if Worktype == "-1" | Worktype == "(-10) N/A" | Worktype == "" | Worktype == "(-10) None" 
+replace work_status6 = 4 if Worktype == "-1" & gq_job_retired_DER == 2
+replace work_status6 = 5 if Worktype == "-1" & gq_job_unempl_DER == 2 
 
 *All mixed recoded to most sendentary selected
 
 #delimit ;
 
-replace work_status = 1 if  Worktype == "(-5) 1 AND 2" 												| 
+replace work_status6 = 1 if  Worktype == "(-5) 1 AND 2" 												| 
                             Worktype == "(-5) 1 and 2" 												| 
                             Worktype == "(-5) 1 and 2 and 3" 										| 
                             Worktype == "(-5) 1 AND 3" 												| 
@@ -154,48 +192,73 @@ replace work_status = 1 if  Worktype == "(-5) 1 AND 2" 												|
                             Worktype == "(-5) 1 AND 4 (-10) 50%/50%"								;
 
                                 
-replace work_status = 2 if  Worktype == "(-5) 2 AND 3" 	| 
+replace work_status6 = 2 if  Worktype == "(-5) 2 AND 3" 	| 
                             Worktype == "(-5) 2 and 3" 	| 
                             Worktype == "(-5) 2 and 4" 	| 
                             Worktype == "(-5) 2 AND 4"	;
                         
-replace work_status = 3 if  Worktype == "(-5) 3 AND 4" 	| 
+replace work_status6 = 3 if  Worktype == "(-5) 3 AND 4" 	| 
                             Worktype == "(-5) 3 and 4"	;
 
-replace work_status = 6 if  work_status == 0 |
+replace work_status6 = 6 if  work_status == 0 |
                             work_status == . ;
 
 #delimit cr
 
-label define work_label 1 "Sedentary" 2 "Standing" 3 "Manual work" 4 "Retired" 5 "Unemployed" 6 "Missing/Unknown"
-label values work_status work_label 
-tab work_status
+
+label define work_label6 1 "Sedentary" 2 "Standing" 3 "Manual work" 4 "Retired" 5 "Unemployed" 6 "Missing/Unknown", replace
+label values work_status6 work_label6 
+
+gen work_status5 = .
+replace work_status5 = 1 if work_status6 == 1
+replace work_status5 = 2 if work_status6 == 2
+replace work_status5 = 3 if work_status6 == 3
+replace work_status5 = 4 if work_status6 == 4 | work_status6 == 5
+replace work_status5 = 5 if work_status6 == 6
+
+label define work_label5 1 "Sedentary" 2 "Standing" 3 "Manual work" 4 "Retired/Unemployed" 5 "Missing/Unknown", replace
+label values work_status5 work_label5 
 
 *************
 ** Smoking **
 *************
 
-rename SMOKE smoke
-replace smoke = 3 if smoke == 9 | smoke == .
-label define smoke_labels 0 "Never smoked" 1 "Ex smoker" 2 "Current smoker" 3 "Missing/Unknown"
-label values smoke smoke_labels
+rename SMOKE smoke4
+replace smoke4 = 3 if smoke4 == 9 | smoke4 == .
+label define smoke_labels4 0 "Never smoked" 1 "Ex smoker" 2 "Current smoker" 3 "Missing/Unknown", replace
+label values smoke4 smoke_labels4
+
+gen     smoke3 = .
+replace smoke3 = 0 if smoke4 == 0
+replace smoke3 = 1 if smoke4 == 1 | smoke4 == 2
+replace smoke3 = 2 if smoke4 == 3
+label define smoke_labels3 0 "Never smoker" 1 "Ever smoker" 2 "Missing/Unknown", replace
+label values smoke3 smoke_labels3
 
 **********
 ** Diet **
 **********
 
-xtile diet = DASH_AccordanceScore, nquantiles(5)
-replace diet = 6 if diet == .
-label define diet_labels 1 "1st quintile of DASH" 2 "2nd quintile of DASH" 3 "3rd quintile of DASH" 4 "4th quintile of DASH" 5 "5th quintile of DASH" 6 "Missing/Unknown"
+xtile diet = DASH_AccordanceScore, nquantiles(2)
+replace diet = 1 if diet == .
+//label define diet_labels 1 "1st quintile of DASH" 2 "2nd quintile of DASH" 3 "3rd quintile of DASH" 4 "4th quintile of DASH" 5 "5th quintile of DASH" 6 "Missing/Unknown"
+label define diet_labels 1 "Below median of DASH/Missing/Unknown" 2 "Above median of DASH"
 label values diet diet_labels
 
 *************
 ** Alcohol **
 *************
 
-recode gq_alc_freqc_DER (1/2=1 "<1/wk") (3/4=2 "1-4/wk") (5=3 "Almost-daily") (-7/.=4 "Unknown") , gen(alcohol)
-label define alcohol_labels 1 "<1 per week" 2 "1-4 per week" 3 "Almost daily" 4 "Missing/Unknown" 
-label values alcohol alcohol_labels
+recode gq_alc_freqc_DER (1/2=1 "<1/wk") (3/4=2 "1-4/wk") (5=3 "Almost-daily") (-7/.=4 "Unknown") , gen(alcohol4)
+label define alcohol_labels4 1 "<1 per week" 2 "1-4 per week" 3 "Almost daily" 4 "Missing/Unknown", replace 
+label values alcohol4 alcohol_labels4
+
+gen alcohol3 = .
+replace alcohol3 = 1 if alcohol4 == 1
+replace alcohol3 = 2 if alcohol4 == 2 | alcohol4 == 3
+replace alcohol3 = 3 if alcohol4 == 4
+label define alcohol_labels3 1 "<1 per week" 2 ">=1 per week" 3 "Missing/Unknown", replace 
+label values alcohol3 alcohol_labels3
 
 *********************************
 ** Cardiometobolic medications **
