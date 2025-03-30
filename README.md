@@ -83,9 +83,9 @@ This section provides a brief overview of the functionality of each code file in
   **Important Note:** Due to the log link function, the mesor and amplitude values reflect the patterns on the logarithm of PAEE prior to exponentiation.
 
 * **Multi-frequency Rhythms:** To capture both circadian (24-hour) and ultradian (shorter than 24-hour) rhythms, we jointly fit cosinor models to 24-hour, 12-hour, and 8-hour cycles. This allows us to identify potential rhythms with different periods. The combined cosinor model is represented as:
-    * $f_{24}(t) = \alpha_{24} \cos (\frac{2 \pi}{24} (t - \phi_{24})$
-    * $f_{12}(t) = \alpha_{12} \cos (\frac{2 \pi}{12} (t - \phi_{12})$
-    * $f_{8}(t) = \alpha_{8} \cos (\frac{2 \pi}{8} (t - \phi_{8})$    
+    * $f_{24}(t) = \alpha_{24} \cos (\frac{2 \pi}{24} (t - \phi_{24}))$
+    * $f_{12}(t) = \alpha_{12} \cos (\frac{2 \pi}{12} (t - \phi_{12}))$
+    * $f_{8}(t) = \alpha_{8} \cos (\frac{2 \pi}{8} (t - \phi_{8}))$    
     * $f_{PAEE}(t) = \exp (f_{24}(t) + f_{12}(t) + f_{8}(t) + M)$
  
   where:
@@ -232,4 +232,4 @@ If you have any questions, or if you are interested in collaborating on future r
     
 ## :balance_scale: License
 
-The code contained in this repository is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+The code contained in this repository is licensed under the Creative Commons Attribution ShareAlike 4.0 License - see the [LICENSE.md](LICENSE.md) file for details
