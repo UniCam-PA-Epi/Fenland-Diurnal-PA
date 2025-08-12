@@ -214,21 +214,10 @@ This repository primarily serves as a resource for reproducing the analysis pres
 
 If you have any questions, or if you are interested in collaborating on future research related to this project, please contact:
 
-  * **Dr Soren Brage, PhD**
-    * **Affiliation:** MRC Epidemiology Unit, University of Cambridge, UK
-    * **Email:** soren.brage@mrc-epid.cam.ac.uk 
-    * **ORCID:** [https://orcid.org/0000-0002-1265-7355](https://orcid.org/0000-0002-1265-7355)
-
   * **Dr Tomas Gonzales, PhD**
     * **Affiliation:** MRC Epidemiology Unit, University of Cambridge, UK
     * **Email:** tomas.gonzales@mrc-epid.cam.ac.uk 
     * **ORCID:** [https://orcid.org/0000-0003-0085-8771](https://orcid.org/0000-0003-0085-8771)
-      
-  * **Dr Philip Lewis, PhD**
-    * **Affiliation:** Institute & Policlinic for Occupational Medicine, University Hospital of Cologne, Germany 
-    * **Email:** philip.lewis@uk-koeln.de
-    * **ORCID:** [https://orcid.org/0000-0002-5881-6032](https://orcid.org/0000-0002-5881-6032)
-    * **Website:** [https://philiplewis.de/](https://philiplewis.de/)
     
 ## :balance_scale: License
 
